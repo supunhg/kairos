@@ -20,6 +20,13 @@ type Verifier interface {
 	Verify(event *v1.Event) error
 }
 
+type EventTelemetry interface {
+	EventCreated(ctx context.Context, groupID, eventType string)
+	EventApplied(ctx context.Context, groupID, eventType string)
+	GroupCreated(ctx context.Context, groupID string, groupType GroupType)
+	SnapshotTaken(ctx context.Context, groupID string, eventCount int)
+}
+
 type GroupType int
 
 const (
@@ -44,12 +51,13 @@ type Group struct {
 type Subscriber func(event *v1.Event)
 
 type Engine struct {
-	mu         sync.RWMutex
-	groups     map[string]*Group
-	nodeID     string
-	signer     Signer
-	verifier   Verifier
+	mu            sync.RWMutex
+	groups        map[string]*Group
+	nodeID        string
+	signer        Signer
+	verifier      Verifier
 	verifyOnApply bool
+	telemetry     EventTelemetry
 }
 
 type EngineOpt func(*Engine)
@@ -64,6 +72,12 @@ func WithVerifier(v Verifier) EngineOpt {
 	return func(e *Engine) {
 		e.verifier = v
 		e.verifyOnApply = true
+	}
+}
+
+func WithTelemetry(t EventTelemetry) EngineOpt {
+	return func(e *Engine) {
+		e.telemetry = t
 	}
 }
 
@@ -112,6 +126,9 @@ func (e *Engine) Apply(ctx context.Context, events []*v1.Event) error {
 		}
 		if err := e.applyEvent(ev); err != nil {
 			return err
+		}
+		if e.telemetry != nil {
+			e.telemetry.EventApplied(ctx, ev.GroupId, ev.PayloadType)
 		}
 	}
 	return nil
@@ -216,6 +233,9 @@ func (e *Engine) TextInsert(ctx context.Context, groupID string, pos int, text s
 	for _, sub := range group.subs {
 		sub(ev)
 	}
+	if e.telemetry != nil {
+		e.telemetry.EventCreated(ctx, groupID, "text_insert")
+	}
 	return ev, nil
 }
 
@@ -249,6 +269,9 @@ func (e *Engine) TextDelete(ctx context.Context, groupID string, pos, length int
 	for _, sub := range group.subs {
 		sub(ev)
 	}
+	if e.telemetry != nil {
+		e.telemetry.EventCreated(ctx, groupID, "text_delete")
+	}
 	return ev, nil
 }
 
@@ -281,6 +304,9 @@ func (e *Engine) MapSet(ctx context.Context, groupID, key, value string) (*v1.Ev
 	group.version[e.nodeID] = ev.HlcTimestamp
 	for _, sub := range group.subs {
 		sub(ev)
+	}
+	if e.telemetry != nil {
+		e.telemetry.EventCreated(ctx, groupID, "map_set")
 	}
 	return ev, nil
 }
