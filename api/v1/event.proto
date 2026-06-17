@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package kairos.v1;
+
+option go_package = "github.com/kairos-io/kairos-go/api/v1";
+
+// Event is the atomic unit of state mutation in KAIROS.
+// Every state change is an Event, appended to the log.
+message Event {
+  // Globally unique event ID (ULID - time-sortable, 16 bytes)
+  string id = 1;
+
+  // Causal dependencies: event IDs this event depends on.
+  // Forms a DAG for causal ordering.
+  repeated string causal_deps = 2;
+
+  // Payload type URL for Any unpacking (e.g., "type.googleapis.com/kairos.v1.TextInsert")
+  string payload_type = 3;
+
+  // Serialized payload (protobuf Any)
+  bytes payload = 4;
+
+  // Hybrid Logical Clock timestamp (nanoseconds since epoch + logical counter)
+  int64 hlc_timestamp = 5;
+
+  // Originator identity (Ed25519 public key, base64)
+  string originator = 6;
+
+  // Signature over (id + causal_deps + payload + hlc_timestamp) by originator
+  bytes signature = 7;
+
+  // Session this event belongs to
+  string session_id = 8;
+
+  // Replication group (room, document, channel)
+  string group_id = 9;
+}
+
+// EventBatch for efficient transport
+message EventBatch {
+  repeated Event events = 1;
+}
+
+// Snapshot manifest for persistence
+message SnapshotManifest {
+  string snapshot_id = 1;
+  int64 hlc_timestamp = 2;
+  int64 event_count = 3;
+  repeated string event_ids = 4;  // Events included in snapshot
+  map<string, string> metadata = 5;  // Custom: CRDT state hashes, etc.
+}
+
+// Hybrid Logical Clock
+message HLC {
+  int64 wall_time = 1;    // Nanoseconds since epoch
+  int64 logical = 2;      // Logical counter
+  string node_id = 3;     // Originating node
+}
+
+// CRDT operation types (extensible via payload_type)
+message TextInsert {
+  string doc_id = 1;
+  int64 position = 2;
+  string text = 3;
+  // RGA-specific: after_id for concurrent insert ordering
+  string after_id = 4;
+}
+
+message TextDelete {
+  string doc_id = 1;
+  int64 position = 2;
+  int64 length = 3;
+}
+
+message MapSet {
+  string map_id = 1;
+  string key = 2;
+  bytes value = 3;  // Any serialized value
+}
+
+message MapDelete {
+  string map_id = 1;
+  string key = 2;
+}
+
+message CounterIncrement {
+  string counter_id = 1;
+  int64 delta = 2;
+}
+
+message RegisterSet {
+  string register_id = 1;
+  bytes value = 2;
+}
+
+// Sync protocol messages
+message SyncRequest {
+  string group_id = 1;
+  string peer_id = 2;
+  // Known version vector for delta sync
+  map<string, int64> known_versions = 3;
+  // Or request full state
+  bool full_state = 4;
+}
+
+message SyncResponse {
+  string group_id = 1;
+  repeated Event events = 2;  // Delta events
+  // Full state snapshot if requested
+  bytes snapshot = 3;
+  map<string, int64> version_vector = 4;
+}
+
+// Presence
+message PresenceUpdate {
+  string user_id = 1;
+  string group_id = 2;
+  // Cursor position for text
+  Cursor cursor = 3;
+  // Selection range
+  Selection selection = 4;
+  // Custom presence data (avatar, status, etc.)
+  map<string, string> metadata = 5;
+  bool online = 6;
+}
+
+message Cursor {
+  int64 position = 1;
+  string anchor_id = 2;  // RGA anchor for collaborative cursors
+}
+
+message Selection {
+  int64 start = 1;
+  int64 end = 2;
+  string start_anchor = 3;
+  string end_anchor = 4;
+}

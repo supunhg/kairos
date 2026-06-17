@@ -1,0 +1,23 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - errcheck
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unused
+  settings:
+    staticcheck:
+      checks: ["all"]
+  exclusions:
+    generated: lax
+    paths:
+      - third_party/
+      - api/v1/
+formatters:
+  enable:
+    - gofmt
+    - goimports

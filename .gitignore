@@ -1,0 +1,16 @@
+# Binaries
+/kairos
+/bin/
+
+# Temp
+/tmp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

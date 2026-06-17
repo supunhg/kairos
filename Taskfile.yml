@@ -1,0 +1,70 @@
+version: '3'
+
+vars:
+  PROTO_PATH: ./api
+  GO_OUT: ./api/v1
+
+tasks:
+  proto:
+    desc: Generate Go code from protobuf
+    cmds:
+      - protoc --go_out={{.GO_OUT}} --go_opt=paths=source_relative --proto_path={{.PROTO_PATH}} {{.PROTO_PATH}}/v1/event.proto
+
+  proto-install:
+    desc: Install protoc and plugins
+    cmds:
+      - sudo apt-get install -y protobuf-compiler
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+  generate:
+    desc: Run all code generation
+    deps: [proto]
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test -race -count=1 ./...
+
+  test-verbose:
+    desc: Run tests with verbose output
+    cmds:
+      - go test -race -count=1 -v ./...
+
+  bench:
+    desc: Run benchmarks
+    cmds:
+      - go test -bench=. -benchmem ./...
+
+  build:
+    desc: Build the CLI
+    cmds:
+      - go build -o bin/kairos ./cmd/kairos
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+
+  tidy:
+    desc: Tidy dependencies
+    cmds:
+      - go mod tidy
+
+  check:
+    desc: Run CI checks locally (tidy, vet, test, build)
+    deps: [tidy, vet, test, build]
+
+  ci:
+    desc: Full CI pipeline
+    deps: [generate, tidy, vet, test, build]
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf bin/
+      - rm -f {{.GO_OUT}}/*.pb.go
