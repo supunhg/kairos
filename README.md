@@ -90,8 +90,11 @@ task ci
 ├── api/v1/                 # Protobuf schema + generated Go
 ├── cmd/kairos/             # CLI entry point
 ├── internal/
+│   ├── agent/              # Agent runtime (memory, blackboards, supervisor)
 │   ├── crdt/               # CRDT types (RGA, LWWMap, GCounter, etc.)
+│   ├── crypto/             # Event signing, capability tokens
 │   ├── eventlog/           # Append-only event store
+│   ├── identity/           # Ed25519 identity management
 │   ├── persistence/        # Snapshots, replay, manifests
 │   ├── sync/               # Sync engine (events ↔ CRDTs)
 │   ├── transport/quic/     # QUIC transport (quic-go)
@@ -118,8 +121,8 @@ task ci
 | 2 | ✅ | CRDT types + sync engine + subscriptions |
 | 3 | ✅ | QUIC transport |
 | 4 | ✅ | Go SDK + CLI |
-| 5 | 🔜 | Security (Ed25519, E2E encryption) |
-| 6 | 🔜 | Agent runtime (memory, blackboards) |
+| 5 | ✅ | Security (Ed25519, event signing, capability tokens, TLS persistence) |
+| 6 | ✅ | Agent runtime (memory, blackboards, supervisor) |
 | 7 | 🔜 | Observability (tracing, metrics, replay) |
 
 ## License
