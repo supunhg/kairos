@@ -1,6 +1,7 @@
 # Binaries
 /kairos
 /bin/
+/dist
 
 # Temp
 /tmp/
