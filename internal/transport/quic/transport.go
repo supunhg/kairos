@@ -4,38 +4,39 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"math/big"
 	"net"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/quic-go/quic-go"
+	"github.com/supunhg/kairos/internal/transport"
 )
 
-type MessageType byte
+type MessageType = transport.MessageType
 
 const (
-	MsgEvent    MessageType = 0x01
-	MsgSyncReq  MessageType = 0x02
-	MsgSyncResp MessageType = 0x03
-	MsgPing     MessageType = 0x04
-	MsgPong     MessageType = 0x05
-	MsgJoin       MessageType = 0x06
-	MsgLeave      MessageType = 0x07
-	MsgKeyExchange MessageType = 0x08
+	MsgEvent        = transport.MsgEvent
+	MsgSyncReq      = transport.MsgSyncReq
+	MsgSyncResp     = transport.MsgSyncResp
+	MsgPing         = transport.MsgPing
+	MsgPong         = transport.MsgPong
+	MsgJoin         = transport.MsgJoin
+	MsgLeave        = transport.MsgLeave
+	MsgKeyExchange  = transport.MsgKeyExchange
 )
 
-type Message struct {
-	Type    MessageType
-	GroupID string
-	Payload []byte
-}
+type Message = transport.Message
 
 type Listener struct {
 	ln *quic.Listener
@@ -77,11 +78,43 @@ func (l *Listener) Addr() net.Addr {
 	return l.ln.Addr()
 }
 
+var (
+	tofuMu    sync.Mutex
+	tofuStore = make(map[string]string)
+)
+
 func Dial(ctx context.Context, addr string) (*Conn, error) {
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"kairos"},
 	}
+
+	tlsConf.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+		if len(rawCerts) == 0 {
+			return nil
+		}
+		cert, err := x509.ParseCertificate(rawCerts[0])
+		if err != nil {
+			return err
+		}
+		fingerprint := sha256.Sum256(cert.Raw)
+		fp := hex.EncodeToString(fingerprint[:])
+
+		tofuMu.Lock()
+		known, exists := tofuStore[addr]
+		if !exists {
+			tofuStore[addr] = fp
+			tofuMu.Unlock()
+			return nil
+		}
+		tofuMu.Unlock()
+
+		if fp != known {
+			return fmt.Errorf("certificate mismatch for %s (possible MITM)", addr)
+		}
+		return nil
+	}
+
 	conn, err := quic.DialAddr(ctx, addr, tlsConf, nil)
 	if err != nil {
 		return nil, err
@@ -165,6 +198,8 @@ func generateTLSConfig() *tls.Config {
 	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {
@@ -200,6 +235,8 @@ func LoadOrGenerateTLSConfig(path string) (*tls.Config, error) {
 	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {

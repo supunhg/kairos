@@ -228,10 +228,6 @@ func (e *Engine) takeSnapshot() error {
 
 	id := fmt.Sprintf("snap-%020d", time.Now().UnixNano())
 	path := filepath.Join(snapDir, id+".snap")
-	eventFrom := int64(0)
-	if len(e.man.Snapshots) > 0 {
-		eventFrom = e.man.Snapshots[len(e.man.Snapshots)-1].EventTo
-	}
 	eventTo := e.man.EventCount
 
 	f, err := os.Create(path)
@@ -251,7 +247,7 @@ func (e *Engine) takeSnapshot() error {
 		EventID:   e.man.LastEventID,
 		HLC:       e.man.LastHLC,
 		CreatedAt: time.Now().UnixNano(),
-		EventFrom: eventFrom,
+		EventFrom: 0,
 		EventTo:   eventTo,
 	}
 
@@ -265,7 +261,7 @@ func (e *Engine) takeSnapshot() error {
 	}
 
 	it, err := e.log.Iter(context.Background(), eventlog.IterOptions{
-		Limit: int(eventTo - eventFrom),
+		Limit: int(eventTo),
 	})
 	if err != nil {
 		return err
@@ -363,6 +359,64 @@ func (e *Engine) enforceRetention() {
 }
 
 func (e *Engine) recover() error {
+	var walEvents []*v1.Event
+	var lastEventID string
+	var lastHLC int64
+	var walCount int64
+
+	if err := e.wal.Replay(func(ev *v1.Event) error {
+		walEvents = append(walEvents, ev)
+		walCount++
+		if ev.HlcTimestamp > lastHLC {
+			lastHLC = ev.HlcTimestamp
+			lastEventID = ev.Id
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("replay wal: %w", err)
+	}
+
+	if walCount == 0 {
+		return nil
+	}
+
+	stats := e.log.Stats()
+	logCount := int64(stats.EventCount)
+
+	if logCount < walCount {
+		written := make(map[string]bool, logCount)
+		it, err := e.log.Iter(context.Background(), eventlog.IterOptions{})
+		if err != nil {
+			return fmt.Errorf("iter eventlog: %w", err)
+		}
+		defer it.Close()
+		for it.Next() {
+			written[it.Event().Id] = true
+		}
+		if err := it.Err(); err != nil {
+			return fmt.Errorf("iter eventlog: %w", err)
+		}
+
+		var missing []*v1.Event
+		for _, ev := range walEvents {
+			if !written[ev.Id] {
+				missing = append(missing, ev)
+			}
+		}
+		if len(missing) > 0 {
+			if err := e.log.Append(context.Background(), missing); err != nil {
+				return fmt.Errorf("re-append missing events: %w", err)
+			}
+		}
+	}
+
+	if walCount > e.man.EventCount || lastHLC > e.man.LastHLC {
+		e.man.EventCount = walCount
+		e.man.LastEventID = lastEventID
+		e.man.LastHLC = lastHLC
+		return e.saveManifest()
+	}
+
 	return nil
 }
 

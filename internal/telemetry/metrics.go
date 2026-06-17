@@ -14,6 +14,7 @@ type Metrics struct {
 	EventsLatency  *prometheus.HistogramVec
 	ActiveGroups   prometheus.Gauge
 	GroupsTotal    prometheus.Counter
+	SnapshotsTotal prometheus.Counter
 	MessagesSent   *prometheus.CounterVec
 	MessagesRecv   *prometheus.CounterVec
 	ActivePeers    prometheus.Gauge
@@ -50,6 +51,12 @@ func NewMetrics() *Metrics {
 				Help: "Total groups created",
 			},
 		),
+		SnapshotsTotal: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "kairos_snapshots_total",
+				Help: "Total snapshots taken",
+			},
+		),
 		MessagesSent: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "kairos_messages_sent_total",
@@ -77,6 +84,7 @@ func NewMetrics() *Metrics {
 		m.EventsLatency,
 		m.ActiveGroups,
 		m.GroupsTotal,
+		m.SnapshotsTotal,
 		m.MessagesSent,
 		m.MessagesRecv,
 		m.ActivePeers,

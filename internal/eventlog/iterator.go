@@ -118,8 +118,8 @@ func (it *iterator) matches(ev *v1.Event) bool {
 	if it.opts.UntilHLC > 0 && ev.HlcTimestamp > it.opts.UntilHLC {
 		return false
 	}
-	if it.opts.BeforeID != "" {
-		// would need index lookup, skip for now
+	if it.opts.BeforeID != "" && ev.Id == it.opts.BeforeID {
+		return false
 	}
 	return true
 }

@@ -8,6 +8,7 @@ import (
 	syncengine "github.com/supunhg/kairos/internal/sync"
 	"github.com/supunhg/kairos/internal/identity"
 	"github.com/supunhg/kairos/internal/crypto"
+	"github.com/supunhg/kairos/internal/transport"
 	"github.com/supunhg/kairos/internal/transport/quic"
 	"github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
@@ -27,13 +28,29 @@ func (identityVerifier) Verify(ev *v1.Event) error {
 	return crypto.VerifyEvent(ev)
 }
 
+type quicConnAdapter struct {
+	conn *quic.Conn
+}
+
+func (a *quicConnAdapter) Send(ctx context.Context, msg transport.Message) error {
+	return a.conn.Send(ctx, msg)
+}
+
+func (a *quicConnAdapter) Receive(ctx context.Context) (transport.Message, error) {
+	return a.conn.Receive(ctx)
+}
+
+func (a *quicConnAdapter) Close() error {
+	return a.conn.Close()
+}
+
 type Client struct {
 	nodeID       string
 	engine       *syncengine.Engine
 	identity     *identity.Identity
 	syncProto    *syncengine.SyncProtocol
 	encryption   *crypto.SessionEncryption
-	conns        map[string]*quic.Conn
+	conns        map[string]transport.Connection
 	mu           sync.RWMutex
 }
 
@@ -76,7 +93,7 @@ type Event = v1.Event
 func New(nodeID string, opts ...Option) *Client {
 	c := &Client{
 		nodeID: nodeID,
-		conns:  make(map[string]*quic.Conn),
+		conns:  make(map[string]transport.Connection),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -106,18 +123,19 @@ func (c *Client) Join(ctx context.Context, sessionID string) (*Session, error) {
 }
 
 func (c *Client) Connect(ctx context.Context, addr string) error {
-	conn, err := quic.Dial(ctx, addr)
+	raw, err := quic.Dial(ctx, addr)
 	if err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
+	conn := &quicConnAdapter{conn: raw}
 
 	c.mu.Lock()
 	c.conns[addr] = conn
 	c.mu.Unlock()
 
 	if c.encryption != nil {
-		if err := conn.Send(ctx, quic.Message{
-			Type:    quic.MsgKeyExchange,
+		if err := conn.Send(ctx, transport.Message{
+			Type:    transport.MsgKeyExchange,
 			Payload: c.encryption.PublicKey(),
 		}); err != nil {
 			return fmt.Errorf("send key exchange: %w", err)
@@ -129,7 +147,7 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 	if err != nil {
 		return fmt.Errorf("marshal sync req: %w", err)
 	}
-	if err := conn.Send(ctx, quic.Message{Type: quic.MsgSyncReq, Payload: data}); err != nil {
+	if err := conn.Send(ctx, transport.Message{Type: transport.MsgSyncReq, Payload: data}); err != nil {
 		return fmt.Errorf("send sync req: %w", err)
 	}
 
@@ -137,7 +155,7 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 	return nil
 }
 
-func (c *Client) receiveLoop(conn *quic.Conn, peerAddr string) {
+func (c *Client) receiveLoop(conn transport.Connection, peerAddr string) {
 	ctx := context.Background()
 	for {
 		msg, err := conn.Receive(ctx)
@@ -145,23 +163,23 @@ func (c *Client) receiveLoop(conn *quic.Conn, peerAddr string) {
 			return
 		}
 		switch msg.Type {
-		case quic.MsgKeyExchange:
+		case transport.MsgKeyExchange:
 			if c.encryption != nil {
 				c.encryption.EstablishSession(peerAddr, msg.Payload)
-				conn.Send(ctx, quic.Message{
-					Type:    quic.MsgKeyExchange,
+				conn.Send(ctx, transport.Message{
+					Type:    transport.MsgKeyExchange,
 					Payload: c.encryption.PublicKey(),
 				})
 			}
 
-		case quic.MsgEvent:
+		case transport.MsgEvent:
 			var ev Event
 			if err := proto.Unmarshal(msg.Payload, &ev); err != nil {
 				continue
 			}
 			c.engine.Apply(ctx, []*Event{&ev})
 
-		case quic.MsgSyncReq:
+		case transport.MsgSyncReq:
 			req, err := syncengine.UnmarshalSyncRequest(msg.Payload)
 			if err != nil {
 				continue
@@ -174,9 +192,9 @@ func (c *Client) receiveLoop(conn *quic.Conn, peerAddr string) {
 			if err != nil {
 				continue
 			}
-			conn.Send(ctx, quic.Message{Type: quic.MsgSyncResp, Payload: data})
+			conn.Send(ctx, transport.Message{Type: transport.MsgSyncResp, Payload: data})
 
-		case quic.MsgSyncResp:
+		case transport.MsgSyncResp:
 			resp, err := syncengine.UnmarshalSyncResponse(msg.Payload)
 			if err != nil {
 				continue
@@ -199,8 +217,8 @@ func (c *Client) SendEvent(ctx context.Context, addr string, ev *Event) error {
 		return err
 	}
 
-	return conn.Send(ctx, quic.Message{
-		Type:    quic.MsgEvent,
+	return conn.Send(ctx, transport.Message{
+		Type:    transport.MsgEvent,
 		GroupID: ev.GroupId,
 		Payload: payload,
 	})
@@ -253,14 +271,13 @@ func (g *Group) Insert(ctx context.Context, pos int, text string) (*Event, error
 	}
 
 	g.sess.client.mu.RLock()
-	for addr, conn := range g.sess.client.conns {
+	for _, conn := range g.sess.client.conns {
 		payload, _ := proto.Marshal(ev)
-		conn.Send(ctx, quic.Message{
-			Type:    quic.MsgEvent,
+		conn.Send(ctx, transport.Message{
+			Type:    transport.MsgEvent,
 			GroupID: g.id,
 			Payload: payload,
 		})
-		_ = addr
 	}
 	g.sess.client.mu.RUnlock()
 
@@ -276,8 +293,8 @@ func (g *Group) Delete(ctx context.Context, pos, length int) (*Event, error) {
 	g.sess.client.mu.RLock()
 	for _, conn := range g.sess.client.conns {
 		payload, _ := proto.Marshal(ev)
-		conn.Send(ctx, quic.Message{
-			Type:    quic.MsgEvent,
+		conn.Send(ctx, transport.Message{
+			Type:    transport.MsgEvent,
 			GroupID: g.id,
 			Payload: payload,
 		})

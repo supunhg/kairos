@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"time"
 
 	"github.com/supunhg/kairos/internal/sync"
 	"go.opentelemetry.io/otel/attribute"
@@ -55,15 +54,7 @@ func (inst *Instrumentation) GroupCreated(_ context.Context, groupID string, gro
 }
 
 func (inst *Instrumentation) SnapshotTaken(_ context.Context, groupID string, eventCount int) {
-	// Snapshot metric not yet implemented
+	inst.metrics.SnapshotsTotal.Inc()
 }
 
-type timedEvent struct {
-	typ   string
-	start time.Time
-}
 
-func (inst *Instrumentation) recordLatency(eventType string, start time.Time) {
-	label := EventTypeLabel(eventType)
-	inst.metrics.EventsLatency.WithLabelValues(label).Observe(time.Since(start).Seconds())
-}

@@ -1,6 +1,7 @@
 package wal
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -239,7 +240,14 @@ func (w *WAL) openActive() error {
 	if len(w.segments) == 0 {
 		return w.newSegment()
 	}
-	w.active = w.segments[len(w.segments)-1]
+	last := w.segments[len(w.segments)-1]
+	last.file.Close()
+	f, err := os.OpenFile(last.path, os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	last.file = f
+	w.active = last
 	return nil
 }
 
@@ -289,12 +297,14 @@ func randStr(n int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[int(time.Now().UnixNano()+int64(i*7))%len(letters)]
+		var buf [1]byte
+		if _, err := rand.Read(buf[:]); err != nil {
+			b[i] = letters[i%len(letters)]
+			continue
+		}
+		b[i] = letters[int(buf[0])%len(letters)]
 	}
 	return string(b)
 }
 
-var (
-	ErrCRCMismatch  = errors.New("wal: crc mismatch")
-	ErrWALClosed    = errors.New("wal: closed")
-)
+

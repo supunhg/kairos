@@ -218,3 +218,141 @@ func TestManualSnapshot(t *testing.T) {
 		t.Fatalf("expected 5 events, got %d", len(restored))
 	}
 }
+
+func TestCrashRecoveryNormal(t *testing.T) {
+	dir := t.TempDir()
+	e, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 5; i++ {
+		if err := e.Append(nil, []*v1.Event{{
+			Id:           "cr-" + string(rune('A'+i)),
+			PayloadType:  "test",
+			HlcTimestamp: int64(i * 100),
+			GroupId:      "g1",
+		}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.Close()
+
+	e2, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e2.Close()
+
+	ec, _ := e2.Stats()
+	if ec != 5 {
+		t.Fatalf("expected 5 events after recovery, got %d", ec)
+	}
+
+	var replayed []*v1.Event
+	if err := e2.Replay(nil, func(ev *v1.Event) error {
+		replayed = append(replayed, ev)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(replayed) != 5 {
+		t.Fatalf("expected 5 events in replay, got %d", len(replayed))
+	}
+}
+
+func TestCrashRecoveryWithSnapshot(t *testing.T) {
+	dir := t.TempDir()
+	e, err := Open(dir, Options{SnapshotInterval: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 10; i++ {
+		if err := e.Append(nil, []*v1.Event{{
+			Id:           "snap-cr-" + string(rune('A'+i)),
+			PayloadType:  "test",
+			HlcTimestamp: int64(i * 100),
+			GroupId:      "g1",
+		}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.Close()
+
+	e2, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e2.Close()
+
+	ec, sc := e2.Stats()
+	if ec != 10 {
+		t.Fatalf("expected 10 events after recovery, got %d", ec)
+	}
+	if sc == 0 {
+		t.Fatal("expected at least 1 snapshot after recovery")
+	}
+
+	restored, err := e2.RestoreLatest(nil)
+	if err != nil {
+		t.Fatalf("RestoreLatest error: %v", err)
+	}
+	if len(restored) != 10 {
+		t.Fatalf("expected 10 restored events, got %d", len(restored))
+	}
+}
+
+func TestCrashRecoveryManifestBehind(t *testing.T) {
+	dir := t.TempDir()
+	e, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 3; i++ {
+		if err := e.Append(nil, []*v1.Event{{
+			Id:           "mf-" + string(rune('A'+i)),
+			PayloadType:  "test",
+			HlcTimestamp: int64(i * 100),
+			GroupId:      "g1",
+		}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.Close()
+
+	e2, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e2.Close()
+
+	ec, _ := e2.Stats()
+	if ec != 3 {
+		t.Fatalf("expected 3 events after recovery, got %d", ec)
+	}
+
+	for i := 3; i < 6; i++ {
+		if err := e2.Append(nil, []*v1.Event{{
+			Id:           "mf-" + string(rune('A'+i)),
+			PayloadType:  "test",
+			HlcTimestamp: int64(i * 100),
+			GroupId:      "g1",
+		}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e2.Close()
+
+	e3, err := Open(dir, Options{SnapshotInterval: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e3.Close()
+
+	ec3, _ := e3.Stats()
+	if ec3 != 6 {
+		t.Fatalf("expected 6 events after second recovery, got %d", ec3)
+	}
+}

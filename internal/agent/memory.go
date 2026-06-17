@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
-	syncengine "github.com/supunhg/kairos/internal/sync"
 	"github.com/supunhg/kairos/api/v1"
+	syncengine "github.com/supunhg/kairos/internal/sync"
+	"google.golang.org/protobuf/proto"
 )
 
 type AgentMemory struct {
@@ -65,10 +66,15 @@ func (m *AgentMemory) Subscribe(_ context.Context, fn func(key, value string)) f
 		if ev.PayloadType != "kairos.v1.MapSet" {
 			return
 		}
+		var ms v1.MapSet
+		if err := proto.Unmarshal(ev.Payload, &ms); err != nil {
+			return
+		}
+		value := string(ms.Value)
 		m.mu.Lock()
-		m.local[ev.Id] = ev.Originator
+		m.local[ms.Key] = value
 		m.mu.Unlock()
-		fn(ev.Id, ev.Originator)
+		fn(ms.Key, value)
 	})
 }
 

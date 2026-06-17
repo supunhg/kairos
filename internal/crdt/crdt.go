@@ -391,4 +391,22 @@ func (r *RGA) findInsertIdxByID(id ID) int {
 	return len(r.nodes)
 }
 
+func (r *RGA) Compact() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	alive := make([]*rgaNode, 0, len(r.nodes))
+	for _, node := range r.nodes {
+		if !node.removed {
+			alive = append(alive, node)
+		}
+	}
+	r.nodes = alive
+
+	r.nodeMap = make(map[string]bool, len(alive))
+	for _, node := range alive {
+		r.nodeMap[node.id.String()] = true
+	}
+}
+
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -194,8 +195,9 @@ func (e *Engine) Subscribe(groupID string, fn Subscriber) func() {
 	return func() {
 		group.mu.Lock()
 		defer group.mu.Unlock()
+		fnPtr := reflect.ValueOf(fn).Pointer()
 		for i, sub := range group.subs {
-			if fmt.Sprintf("%p", sub) == fmt.Sprintf("%p", fn) {
+			if reflect.ValueOf(sub).Pointer() == fnPtr {
 				group.subs = append(group.subs[:i], group.subs[i+1:]...)
 				break
 			}
