@@ -1,3 +1,4 @@
+// Package agent provides runtime agent lifecycle, memory, and blackboard primitives.
 package agent
 
 import (
@@ -10,7 +11,7 @@ import (
 type Status int
 
 const (
-	StatusCreated  Status = iota
+	StatusCreated Status = iota
 	StatusRunning
 	StatusStopped
 	StatusPaused

@@ -1,3 +1,4 @@
+// Package persistence provides event log and snapshot storage.
 package persistence
 
 import (
@@ -14,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"github.com/supunhg/kairos/internal/eventlog"
 	"github.com/supunhg/kairos/internal/wal"
 	"google.golang.org/protobuf/proto"
@@ -23,12 +24,12 @@ import (
 const manifestFile = "manifest.json"
 
 type Engine struct {
-	dir   string
-	mu    sync.RWMutex
-	log   *eventlog.AppendOnlyStore
-	wal   *wal.WAL
-	man   *Manifest
-	opts  Options
+	dir  string
+	mu   sync.RWMutex
+	log  *eventlog.AppendOnlyStore
+	wal  *wal.WAL
+	man  *Manifest
+	opts Options
 }
 
 type Options struct {
@@ -38,11 +39,11 @@ type Options struct {
 }
 
 type Manifest struct {
-	Version      int               `json:"version"`
-	Snapshots    []SnapshotMeta    `json:"snapshots"`
-	LastEventID  string            `json:"last_event_id"`
-	LastHLC      int64             `json:"last_hlc"`
-	EventCount   int64             `json:"event_count"`
+	Version     int            `json:"version"`
+	Snapshots   []SnapshotMeta `json:"snapshots"`
+	LastEventID string         `json:"last_event_id"`
+	LastHLC     int64          `json:"last_hlc"`
+	EventCount  int64          `json:"event_count"`
 }
 
 type SnapshotMeta struct {
@@ -57,7 +58,7 @@ type SnapshotMeta struct {
 }
 
 func Open(dir string, opts Options) (*Engine, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return nil, err
 	}
 	if opts.RetentionCount <= 0 {
@@ -76,13 +77,13 @@ func Open(dir string, opts Options) (*Engine, error) {
 	logPath := filepath.Join(dir, "events.db")
 	log, err := eventlog.NewAppendOnlyStore(logPath)
 	if err != nil {
-		w.Close()
+		_ = w.Close()
 		return nil, fmt.Errorf("log open: %w", err)
 	}
 	e.log = log
 
 	if err := e.loadManifest(); err != nil {
-		w.Close()
+		_ = w.Close()
 		return nil, fmt.Errorf("manifest: %w", err)
 	}
 
@@ -142,7 +143,7 @@ func (e *Engine) ReplayFrom(ctx context.Context, afterID string, fn func(*v1.Eve
 	if err != nil {
 		return err
 	}
-	defer it.Close()
+	defer func() { _ = it.Close() }()
 
 	for it.Next() {
 		if err := fn(it.Event()); err != nil {
@@ -163,7 +164,7 @@ func (e *Engine) ReplayRange(ctx context.Context, from, to int64, fn func(*v1.Ev
 	if err != nil {
 		return err
 	}
-	defer it.Close()
+	defer func() { _ = it.Close() }()
 
 	for it.Next() {
 		if err := fn(it.Event()); err != nil {
@@ -208,9 +209,9 @@ func (e *Engine) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.wal.Sync()
-	e.wal.Close()
-	e.log.Close()
+	_ = e.wal.Sync()
+	_ = e.wal.Close()
+	_ = e.log.Close()
 	return e.saveManifest()
 }
 
@@ -222,7 +223,7 @@ func (e *Engine) Stats() (eventCount int64, snapshotCount int) {
 
 func (e *Engine) takeSnapshot() error {
 	snapDir := filepath.Join(e.dir, "snapshots")
-	if err := os.MkdirAll(snapDir, 0755); err != nil {
+	if err := os.MkdirAll(snapDir, 0750); err != nil {
 		return err
 	}
 
@@ -230,11 +231,11 @@ func (e *Engine) takeSnapshot() error {
 	path := filepath.Join(snapDir, id+".snap")
 	eventTo := e.man.EventCount
 
-	f, err := os.Create(path)
+	f, err := os.Create(path) //nolint:gosec // G304: path constructed from known directory
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var w io.WriteCloser = f
 	if e.opts.Compression {
@@ -266,7 +267,7 @@ func (e *Engine) takeSnapshot() error {
 	if err != nil {
 		return err
 	}
-	defer it.Close()
+	defer func() { _ = it.Close() }()
 
 	for it.Next() {
 		data, err := proto.Marshal(it.Event())
@@ -282,7 +283,7 @@ func (e *Engine) takeSnapshot() error {
 	}
 
 	if e.opts.Compression {
-		w.Close()
+		_ = w.Close()
 	}
 
 	info, _ := f.Stat()
@@ -301,7 +302,7 @@ func (e *Engine) restoreSnapshot(snap *SnapshotMeta, events *[]*v1.Event) error 
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var r io.ReadCloser = f
 	if strings.HasSuffix(snap.Path, ".snap.gz") || e.opts.Compression {
@@ -309,7 +310,7 @@ func (e *Engine) restoreSnapshot(snap *SnapshotMeta, events *[]*v1.Event) error 
 		if err != nil {
 			return err
 		}
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 	}
 
 	metaData, err := readLengthPrefixed(r)
@@ -353,7 +354,7 @@ func (e *Engine) enforceRetention() {
 	}
 	remove := len(e.man.Snapshots) - e.opts.RetentionCount
 	for i := 0; i < remove; i++ {
-		os.Remove(e.man.Snapshots[i].Path)
+		_ = os.Remove(e.man.Snapshots[i].Path)
 	}
 	e.man.Snapshots = e.man.Snapshots[remove:]
 }
@@ -381,7 +382,7 @@ func (e *Engine) recover() error {
 	}
 
 	stats := e.log.Stats()
-	logCount := int64(stats.EventCount)
+	logCount := int64(stats.EventCount) //nolint:gosec // safe: event count bounded by storage
 
 	if logCount < walCount {
 		written := make(map[string]bool, logCount)
@@ -389,7 +390,7 @@ func (e *Engine) recover() error {
 		if err != nil {
 			return fmt.Errorf("iter eventlog: %w", err)
 		}
-		defer it.Close()
+		defer func() { _ = it.Close() }()
 		for it.Next() {
 			written[it.Event().Id] = true
 		}
@@ -422,7 +423,7 @@ func (e *Engine) recover() error {
 
 func (e *Engine) loadManifest() error {
 	path := filepath.Join(e.dir, manifestFile)
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // G304: manifest from known directory
 	if err != nil {
 		if os.IsNotExist(err) {
 			e.man = &Manifest{Version: 1}
@@ -430,37 +431,37 @@ func (e *Engine) loadManifest() error {
 		}
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return json.NewDecoder(f).Decode(&e.man)
 }
 
 func (e *Engine) saveManifest() error {
 	path := filepath.Join(e.dir, manifestFile+".tmp")
-	f, err := os.Create(path)
+	f, err := os.Create(path) //nolint:gosec // G304: manifest from known directory
 	if err != nil {
 		return err
 	}
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(e.man); err != nil {
-		f.Close()
+		_ = f.Close()
 		return err
 	}
-	f.Close()
+	_ = f.Close()
 	return os.Rename(path, filepath.Join(e.dir, manifestFile))
 }
 
 func writeLengthPrefixed(w io.Writer, data []byte) error {
 	var header [8]byte
 	length := uint64(len(data))
-	header[0] = byte(length >> 56)
-	header[1] = byte(length >> 48)
-	header[2] = byte(length >> 40)
-	header[3] = byte(length >> 32)
-	header[4] = byte(length >> 24)
-	header[5] = byte(length >> 16)
-	header[6] = byte(length >> 8)
-	header[7] = byte(length)
+	header[0] = byte(length >> 56) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[1] = byte(length >> 48) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[2] = byte(length >> 40) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[3] = byte(length >> 32) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[4] = byte(length >> 24) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[5] = byte(length >> 16) //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[6] = byte(length >> 8)  //nolint:gosec // safe: byte truncation is intentional for serialization
+	header[7] = byte(length)       //nolint:gosec // safe: byte truncation is intentional for serialization
 	if _, err := w.Write(header[:]); err != nil {
 		return err
 	}

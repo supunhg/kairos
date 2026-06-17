@@ -1,3 +1,4 @@
+// Package sync provides CRDT-based document synchronization.
 package sync
 
 import (
@@ -8,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"github.com/supunhg/kairos/internal/crdt"
 	"google.golang.org/protobuf/proto"
 )
@@ -369,7 +370,7 @@ func (e *Engine) GroupIDs() []string {
 
 func (e *Engine) maybeSign(ev *v1.Event) {
 	if e.signer != nil {
-		e.signer.Sign(ev)
+		_ = e.signer.Sign(ev)
 	}
 }
 

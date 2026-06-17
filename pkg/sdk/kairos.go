@@ -1,3 +1,4 @@
+// Package kairos provides the high-level client SDK for KAIROS real-time collaboration.
 package kairos
 
 import (
@@ -7,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	syncengine "github.com/supunhg/kairos/internal/sync"
-	"github.com/supunhg/kairos/internal/identity"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"github.com/supunhg/kairos/internal/crypto"
+	"github.com/supunhg/kairos/internal/identity"
+	syncengine "github.com/supunhg/kairos/internal/sync"
 	"github.com/supunhg/kairos/internal/transport"
 	"github.com/supunhg/kairos/internal/transport/quic"
-	"github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -57,17 +58,17 @@ type peerConn struct {
 }
 
 type Client struct {
-	nodeID       string
-	engine       *syncengine.Engine
-	identity     *identity.Identity
-	syncProto    *syncengine.SyncProtocol
-	encryption   *crypto.SessionEncryption
-	conns        map[string]*peerConn
-	mu           sync.RWMutex
-	logger       Logger
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
-	opts         clientOpts
+	nodeID     string
+	engine     *syncengine.Engine
+	identity   *identity.Identity
+	syncProto  *syncengine.SyncProtocol
+	encryption *crypto.SessionEncryption
+	conns      map[string]*peerConn
+	mu         sync.RWMutex
+	logger     Logger
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	opts       clientOpts
 }
 
 type clientOpts struct {
@@ -110,18 +111,16 @@ func WithReconnectBackoff(base, max time.Duration) Option {
 }
 
 type Session struct {
-	client  *Client
-	id      string
-	groups  map[string]*Group
-	mu      sync.RWMutex
+	client *Client
+	id     string
+	groups map[string]*Group
+	mu     sync.RWMutex
 }
 
 type Group struct {
 	id     string
 	sess   *Session
 	engine *syncengine.Engine
-	subs   []Subscription
-	mu     sync.RWMutex
 }
 
 type Subscription struct {
@@ -193,7 +192,7 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 			Type:    transport.MsgKeyExchange,
 			Payload: c.encryption.PublicKey(),
 		}); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return fmt.Errorf("send key exchange: %w", err)
 		}
 	}
@@ -201,15 +200,16 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 	req := c.syncProto.BuildSyncRequest(ctx)
 	data, err := syncengine.MarshalSyncRequest(req)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("marshal sync req: %w", err)
 	}
 	if err := conn.Send(ctx, transport.Message{Type: transport.MsgSyncReq, Payload: data}); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("send sync req: %w", err)
 	}
 
 	c.wg.Add(1)
+	//nolint:gosec // G118: goroutine needs background context for reconnect loop
 	go c.receiveLoop(conn, addr)
 	return nil
 }
@@ -245,7 +245,7 @@ func (c *Client) receiveLoop(conn transport.Connection, peerAddr string) {
 		switch msg.Type {
 		case transport.MsgKeyExchange:
 			if c.encryption != nil {
-				c.encryption.EstablishSession(peerAddr, msg.Payload)
+				_ = c.encryption.EstablishSession(peerAddr, msg.Payload)
 				if err := conn.Send(ctx, transport.Message{
 					Type:    transport.MsgKeyExchange,
 					Payload: c.encryption.PublicKey(),
@@ -307,7 +307,7 @@ func (c *Client) tryReconnect(peerAddr string) bool {
 	}
 
 	c.log("reconnecting to %s...", peerAddr)
-	pc.conn.Close()
+	_ = pc.conn.Close()
 
 	raw, err := quic.Dial(context.Background(), peerAddr)
 	if err != nil {
@@ -380,7 +380,7 @@ func (c *Client) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for addr, pc := range c.conns {
-		pc.conn.Close()
+		_ = pc.conn.Close()
 		delete(c.conns, addr)
 	}
 	c.wg.Wait()

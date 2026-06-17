@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 type SyncProtocol struct {
@@ -13,23 +13,23 @@ type SyncProtocol struct {
 }
 
 type SyncRequest struct {
-	NodeID    string            `json:"node_id"`
-	Groups    []string          `json:"groups"`
-	Filter    []byte            `json:"filter,omitempty"`
-	Versions  map[string]int64  `json:"versions,omitempty"`
+	NodeID   string           `json:"node_id"`
+	Groups   []string         `json:"groups"`
+	Filter   []byte           `json:"filter,omitempty"`
+	Versions map[string]int64 `json:"versions,omitempty"`
 }
 
 type SyncResponse struct {
-	NodeID   string            `json:"node_id"`
-	Groups   []GroupSyncInfo   `json:"groups"`
-	Complete bool              `json:"complete"`
+	NodeID   string          `json:"node_id"`
+	Groups   []GroupSyncInfo `json:"groups"`
+	Complete bool            `json:"complete"`
 }
 
 type GroupSyncInfo struct {
-	GroupID     string           `json:"group_id"`
-	GroupType   GroupType        `json:"group_type"`
-	Versions    map[string]int64 `json:"versions"`
-	EventCount  int              `json:"event_count"`
+	GroupID    string           `json:"group_id"`
+	GroupType  GroupType        `json:"group_type"`
+	Versions   map[string]int64 `json:"versions"`
+	EventCount int              `json:"event_count"`
 }
 
 func NewSyncProtocol(engine *Engine) *SyncProtocol {
@@ -88,8 +88,8 @@ func (sp *SyncProtocol) HandleSyncResponse(ctx context.Context, resp *SyncRespon
 
 func (sp *SyncProtocol) BuildSyncRequest(ctx context.Context) *SyncRequest {
 	return &SyncRequest{
-		NodeID:  sp.engine.nodeID,
-		Groups:  sp.engine.GroupIDs(),
+		NodeID: sp.engine.nodeID,
+		Groups: sp.engine.GroupIDs(),
 	}
 }
 

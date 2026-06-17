@@ -9,7 +9,7 @@ import (
 type SyncState int
 
 const (
-	SyncIdle      SyncState = iota
+	SyncIdle SyncState = iota
 	SyncRequested
 	SyncInProgress
 	SyncComplete

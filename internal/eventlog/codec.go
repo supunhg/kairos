@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -29,7 +29,7 @@ func (d *Decoder) Decode() (*v1.Event, error) {
 
 	var header [14]byte
 	n, err := io.ReadFull(d.r, header[:])
-	d.bytesRead += uint64(n)
+	d.bytesRead += uint64(n) //nolint:gosec // safe: n is bounded by header size
 	d.lastOffset += int64(n)
 	if err == io.EOF {
 		return nil, io.EOF
@@ -55,7 +55,7 @@ func (d *Decoder) Decode() (*v1.Event, error) {
 
 	data := make([]byte, length)
 	n, err = io.ReadFull(d.r, data)
-	d.bytesRead += uint64(n)
+	d.bytesRead += uint64(n) //nolint:gosec // safe: n is bounded by data length
 	d.lastOffset += int64(n)
 	if err != nil {
 		return nil, err

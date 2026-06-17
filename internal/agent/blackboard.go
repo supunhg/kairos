@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	v1 "github.com/supunhg/kairos/api/v1"
 	syncengine "github.com/supunhg/kairos/internal/sync"
-	"github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -19,9 +19,9 @@ type BlackboardMessage struct {
 }
 
 type Blackboard struct {
-	engine  *syncengine.Engine
-	groupID string
-	mu      sync.RWMutex
+	engine   *syncengine.Engine
+	groupID  string
+	mu       sync.RWMutex
 	messages []BlackboardMessage
 }
 

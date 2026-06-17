@@ -150,8 +150,8 @@ func (se *SessionEncryption) RotateKey(peerID string) error {
 	return nil
 }
 
-func (e *SessionEncryption) PrivateKey() []byte {
-	return e.keyPair.PrivateBytes()
+func (se *SessionEncryption) PrivateKey() []byte {
+	return se.keyPair.PrivateBytes()
 }
 
 func (sk *SessionKey) Key() []byte {

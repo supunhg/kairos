@@ -18,7 +18,7 @@ func TestTelemetryNoopExporter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tel.Shutdown(context.Background())
+	defer func() { _ = tel.Shutdown(context.Background()) }()
 
 	if tel.Enabled() {
 		t.Fatal("expected telemetry to be disabled")
@@ -28,16 +28,16 @@ func TestTelemetryNoopExporter(t *testing.T) {
 func TestTelemetryStdoutExporter(t *testing.T) {
 	var buf strings.Builder
 	cfg := Config{
-		ServiceName:  "test",
+		ServiceName:    "test",
 		ServiceVersion: "0.1.0",
-		ExporterType: ExporterStdout,
-		Writer:       &buf,
+		ExporterType:   ExporterStdout,
+		Writer:         &buf,
 	}
 	tel, err := New(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tel.Shutdown(context.Background())
+	defer func() { _ = tel.Shutdown(context.Background()) }()
 
 	if !tel.Enabled() {
 		t.Fatal("expected telemetry to be enabled")
@@ -54,7 +54,7 @@ func TestInstrumentationWithEngine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tel.Shutdown(context.Background())
+	defer func() { _ = tel.Shutdown(context.Background()) }()
 
 	metrics := NewMetrics()
 	inst := NewInstrumentation(tel, metrics)
@@ -64,8 +64,8 @@ func TestInstrumentationWithEngine(t *testing.T) {
 	)
 	ctx := context.Background()
 
-	engine.TextInsert(ctx, "doc1", 0, "Hello")
-	engine.MapSet(ctx, "map1", "key", "value")
+	_, _ = engine.TextInsert(ctx, "doc1", 0, "Hello")
+	_, _ = engine.MapSet(ctx, "map1", "key", "value")
 
 	// Metrics should have been incremented
 	if metrics.EventsTotal == nil {

@@ -14,7 +14,7 @@ func TestListenAndAccept(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	addr := ln.Addr().String()
 	serverDone := make(chan error, 1)
@@ -25,7 +25,7 @@ func TestListenAndAccept(t *testing.T) {
 			serverDone <- err
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		msg, err := conn.Receive(ctx)
 		if err != nil {
@@ -49,7 +49,7 @@ func TestListenAndAccept(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial error: %v", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	err = conn.Send(ctx, Message{
 		Type:    MsgPing,
@@ -78,7 +78,7 @@ func TestSendReceiveMultiple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	addr := ln.Addr().String()
 	serverDone := make(chan error, 1)
@@ -89,7 +89,7 @@ func TestSendReceiveMultiple(t *testing.T) {
 			serverDone <- err
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		for i := 0; i < 3; i++ {
 			msg, err := conn.Receive(ctx)
@@ -111,7 +111,7 @@ func TestSendReceiveMultiple(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial error: %v", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	messages := []Message{
 		{Type: MsgPing, GroupID: "g1", Payload: []byte("msg1")},
@@ -143,7 +143,7 @@ func TestEmptyGroupID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	addr := ln.Addr().String()
 	serverDone := make(chan error, 1)
@@ -154,7 +154,7 @@ func TestEmptyGroupID(t *testing.T) {
 			serverDone <- err
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		msg, err := conn.Receive(ctx)
 		if err != nil {
@@ -178,7 +178,7 @@ func TestEmptyGroupID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial error: %v", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	err = conn.Send(ctx, Message{
 		Type:    MsgPing,

@@ -70,7 +70,7 @@ func main() {
 	})
 	defer unsub()
 
-	doc.Insert(ctx, 0, "Hello from "+*nodeID+"!")
+	_, _ = doc.Insert(ctx, 0, "Hello from "+*nodeID+"!")
 
 	fmt.Printf("KAIROS node '%s' running on %s\n", *nodeID, *addr)
 	fmt.Println("Press Ctrl+C to exit")
@@ -82,5 +82,5 @@ func main() {
 	}
 
 	cancel()
-	client.Close()
+	_ = client.Close()
 }

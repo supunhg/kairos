@@ -1,3 +1,4 @@
+// Package crdt provides conflict-free replicated data types.
 package crdt
 
 import (
@@ -11,20 +12,6 @@ type Operation interface {
 	Type() string
 	Timestamp() int64
 	NodeID() string
-}
-
-type baseOp struct {
-	opType    string
-	timestamp int64
-	nodeID    string
-}
-
-func (b baseOp) Type() string     { return b.opType }
-func (b baseOp) Timestamp() int64 { return b.timestamp }
-func (b baseOp) NodeID() string   { return b.nodeID }
-
-func newOp(typ, nodeID string) baseOp {
-	return baseOp{opType: typ, timestamp: time.Now().UnixNano(), nodeID: nodeID}
 }
 
 type ID struct {
@@ -53,10 +40,10 @@ func (id ID) String() string {
 }
 
 type LWWRegister struct {
-	mu         sync.RWMutex
-	value      any
-	timestamp  int64
-	nodeID     string
+	mu        sync.RWMutex
+	value     any
+	timestamp int64
+	nodeID    string
 }
 
 func NewLWWRegister() *LWWRegister {
@@ -167,9 +154,9 @@ func (c *PNCounter) Merge(other *PNCounter) {
 }
 
 type Element struct {
-	ID       ID
-	Value    any
-	Removed  bool
+	ID      ID
+	Value   any
+	Removed bool
 }
 
 type LWWMap struct {
@@ -408,5 +395,3 @@ func (r *RGA) Compact() {
 		r.nodeMap[node.id.String()] = true
 	}
 }
-
-

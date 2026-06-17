@@ -1,3 +1,4 @@
+// Package eventlog provides append-only event storage and codec.
 package eventlog
 
 type Error string

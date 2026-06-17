@@ -39,8 +39,8 @@ func TestSessionEncryptDecrypt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alice.EstablishSession("bob", bob.PublicKey())
-	bob.EstablishSession("alice", alice.PublicKey())
+	_ = alice.EstablishSession("bob", bob.PublicKey())
+	_ = bob.EstablishSession("alice", alice.PublicKey())
 
 	msg := []byte("secret message from alice to bob")
 	ciphertext, err := alice.EncryptForPeer("bob", msg)
@@ -68,7 +68,7 @@ func TestSessionRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alice.EstablishSession("bob", bob.PublicKey())
+	_ = alice.EstablishSession("bob", bob.PublicKey())
 	if !alice.HasSession("bob") {
 		t.Fatal("expected session before removal")
 	}
@@ -94,7 +94,7 @@ func TestSessionEnumerate(t *testing.T) {
 	for _, name := range []string{"alice", "bob", "charlie"} {
 		kp, _ := GenerateKeyPair()
 		peerKeys[name] = kp.PublicBytes()
-		se.EstablishSession(name, peerKeys[name])
+		_ = se.EstablishSession(name, peerKeys[name])
 	}
 
 	sessions := se.ActiveSessions()
@@ -113,8 +113,8 @@ func TestSessionKeyRotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alice.EstablishSession("bob", bob.PublicKey())
-	bob.EstablishSession("alice", alice.PublicKey())
+	_ = alice.EstablishSession("bob", bob.PublicKey())
+	_ = bob.EstablishSession("alice", alice.PublicKey())
 
 	msg1 := []byte("before rotation")
 	c1, _ := alice.EncryptForPeer("bob", msg1)
@@ -148,7 +148,7 @@ func TestSessionKeyAge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alice.EstablishSession("bob", bob.PublicKey())
+	_ = alice.EstablishSession("bob", bob.PublicKey())
 
 	if !alice.HasSession("bob") {
 		t.Fatal("expected session")
@@ -165,8 +165,8 @@ func TestSessionPeerMismatch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alice.EstablishSession("bob", bob.PublicKey())
-	bob.EstablishSession("alice", alice.PublicKey())
+	_ = alice.EstablishSession("bob", bob.PublicKey())
+	_ = bob.EstablishSession("alice", alice.PublicKey())
 
 	msg := []byte("secret")
 	ciphertext, err := alice.EncryptForPeer("bob", msg)
@@ -211,8 +211,8 @@ func TestEstablishFromHandshake(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bob.EstablishFromHandshake("alice", aliceKP.PublicBytes(), bobKP.PrivateBytes(), bobKP.PublicBytes())
-	alice.EstablishFromHandshake("bob", bobKP.PublicBytes(), aliceKP.PrivateBytes(), aliceKP.PublicBytes())
+	_ = bob.EstablishFromHandshake("alice", aliceKP.PublicBytes(), bobKP.PrivateBytes(), bobKP.PublicBytes())
+	_ = alice.EstablishFromHandshake("bob", bobKP.PublicBytes(), aliceKP.PrivateBytes(), aliceKP.PublicBytes())
 
 	msg := []byte("handshake-established")
 	ciphertext, _ := alice.EncryptForPeer("bob", msg)

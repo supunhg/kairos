@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	apitrace "go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -19,7 +19,7 @@ import (
 type ExporterType int
 
 const (
-	ExporterNone    ExporterType = iota
+	ExporterNone ExporterType = iota
 	ExporterStdout
 )
 

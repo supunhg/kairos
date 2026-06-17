@@ -1,3 +1,4 @@
+// Package transport defines the pluggable transport layer for peer communication.
 package transport
 
 import (

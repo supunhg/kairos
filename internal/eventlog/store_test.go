@@ -1,10 +1,11 @@
 package eventlog
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 func TestAppendAndGet(t *testing.T) {
@@ -15,14 +16,14 @@ func TestAppendAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ev := &v1.Event{Id: "ev-1", PayloadType: "test", HlcTimestamp: 100, GroupId: "g1"}
-	if err := s.Append(nil, []*v1.Event{ev}); err != nil {
+	if err := s.Append(context.TODO(), []*v1.Event{ev}); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := s.Get(nil, "ev-1")
+	got, err := s.Get(context.TODO(), "ev-1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,21 +48,21 @@ func TestIterateEvents(t *testing.T) {
 			HlcTimestamp: int64(i),
 			GroupId:      "g1",
 		}
-		s.Append(nil, []*v1.Event{ev})
+		_ = s.Append(context.TODO(), []*v1.Event{ev})
 	}
-	s.Close()
+	_ = s.Close()
 
 	s2, err := NewAppendOnlyStore(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func() { _ = s2.Close() }()
 
-	it, err := s2.Iter(nil, IterOptions{Limit: 5})
+	it, err := s2.Iter(context.TODO(), IterOptions{Limit: 5})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer it.Close()
+	defer func() { _ = it.Close() }()
 
 	var count int
 	for it.Next() {
@@ -83,20 +84,20 @@ func TestFilterByGroup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	events := []*v1.Event{
 		{Id: "1", PayloadType: "test", GroupId: "g1", HlcTimestamp: 1},
 		{Id: "2", PayloadType: "test", GroupId: "g2", HlcTimestamp: 2},
 		{Id: "3", PayloadType: "test", GroupId: "g1", HlcTimestamp: 3},
 	}
-	s.Append(nil, events)
+	_ = s.Append(context.TODO(), events)
 
-	it, err := s.Iter(nil, IterOptions{GroupID: "g1"})
+	it, err := s.Iter(context.TODO(), IterOptions{GroupID: "g1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer it.Close()
+	defer func() { _ = it.Close() }()
 
 	var ids []string
 	for it.Next() {
@@ -116,21 +117,21 @@ func TestPersistenceAcrossRestarts(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 100; i++ {
-		s.Append(nil, []*v1.Event{{
+		_ = s.Append(context.TODO(), []*v1.Event{{
 			Id:           "ev-" + string(rune('0'+i%10)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i),
 		}})
 	}
-	s.Close()
+	_ = s.Close()
 
 	s2, err := NewAppendOnlyStore(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func() { _ = s2.Close() }()
 
-	_, err = s2.Get(nil, "ev-2")
+	_, err = s2.Get(context.TODO(), "ev-2")
 	if err != nil {
 		t.Fatal("expected event ev-2 to persist: ", err)
 	}

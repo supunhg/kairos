@@ -15,7 +15,7 @@ func TestWebSocketTransportDialListen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	addr := ln.Addr().String()
 
@@ -27,15 +27,15 @@ func TestWebSocketTransportDialListen(t *testing.T) {
 
 		msg, err := conn.Receive(context.Background())
 		if err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return
 		}
-		conn.Send(context.Background(), transport.Message{
+		_ = conn.Send(context.Background(), transport.Message{
 			Type:    transport.MsgEvent,
 			GroupID: msg.GroupID,
 			Payload: append(msg.Payload, []byte(" reply")...),
 		})
-		conn.Close()
+		_ = conn.Close()
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -44,7 +44,7 @@ func TestWebSocketTransportDialListen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	err = conn.Send(context.Background(), transport.Message{
 		Type:    transport.MsgEvent,
@@ -75,7 +75,7 @@ func TestWebSocketMultipleMessages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	addr := ln.Addr().String()
 
 	go func() {
@@ -87,10 +87,10 @@ func TestWebSocketMultipleMessages(t *testing.T) {
 		for {
 			msg, err := conn.Receive(context.Background())
 			if err != nil {
-				conn.Close()
+				_ = conn.Close()
 				return
 			}
-			conn.Send(context.Background(), transport.Message{
+			_ = conn.Send(context.Background(), transport.Message{
 				Type:    msg.Type,
 				GroupID: msg.GroupID,
 				Payload: msg.Payload,
@@ -104,7 +104,7 @@ func TestWebSocketMultipleMessages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	for i := 0; i < 3; i++ {
 		err := conn.Send(context.Background(), transport.Message{
@@ -133,7 +133,7 @@ func TestWebSocketMessageTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	addr := ln.Addr().String()
 
 	go func() {
@@ -144,10 +144,10 @@ func TestWebSocketMessageTypes(t *testing.T) {
 		for {
 			msg, err := conn.Receive(context.Background())
 			if err != nil {
-				conn.Close()
+				_ = conn.Close()
 				return
 			}
-			conn.Send(context.Background(), msg)
+			_ = conn.Send(context.Background(), msg)
 		}
 	}()
 
@@ -157,7 +157,7 @@ func TestWebSocketMessageTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	tests := []transport.MessageType{
 		transport.MsgEvent,

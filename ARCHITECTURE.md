@@ -10,7 +10,6 @@
 - Unique, memorable, sophisticated, and not a common English word.
 - Evokes real-time orchestration, durable history, and opportune coordination.
 - Brandable: `kairos.dev`, `kairos.go`, CLI `kairos`, etc.
-- Distinct from **SPARK** (the lean, high-performance P2P transport/file delivery system).
 
 ---
 
@@ -61,7 +60,7 @@ It acts as the "operating system substrate" for:
 
 | Not | Reason |
 |-----|--------|
-| A transport protocol | That is **SPARK** |
+| A transport protocol | KAIROS uses existing transports (QUIC, WebSocket) |
 | A full database / query engine | Focused on runtime + live synchronization, not OLAP/OLTP |
 | A blockchain or Byzantine system | Assumes authenticated participants with different trust model |
 | A cloud-only SaaS | Local-first and self-hostable are non-negotiable |
@@ -85,15 +84,15 @@ KAIROS wins when developers can ship complex stateful, collaborative, or agent-d
 ### 5) Strategic Positioning
 
 **KAIROS** sits in the sweet spot between:
-- Low-level transports (SPARK, QUIC, WebTransport)
+- Low-level transports (QUIC, WebSocket, TCP)
 - Managed realtime platforms (Liveblocks, Convex, Ably, PartyKit)
 - Local CRDT libraries (Yjs, Automerge, ElectricSQL)
 
-It is the **self-hostable, Rust-native, runtime-centric foundation** for the next generation of stateful software.
+It is the **self-hostable, Go-native, runtime-centric foundation** for the next generation of stateful software.
 
 **Competitive moat:**
 - Deep integration of durability, replayability, semantic sync, and agent support.
-- Transport abstraction + zero-copy Rust performance.
+- Transport abstraction + high performance.
 - First-class support for both human collaboration and AI agents.
 
 ---
@@ -141,13 +140,13 @@ It is the **self-hostable, Rust-native, runtime-centric foundation** for the nex
 
 ```mermaid
 flowchart TD
-    SDK["SDKs (Rust/TS/Go)\nReactive Primitives"] --> Scheduler["Runtime Scheduler\nPriorities • Work Stealing"]
+    SDK["SDKs (Go/TS)\nReactive Primitives"] --> Scheduler["Runtime Scheduler\nPriorities • Work Stealing"]
     Scheduler --> Sessions["Durable Sessions\nCheckpoint • Migrate • Reconnect"]
     Sessions --> Sync["Synchronization Engine\nCRDT + OT + Event Sourcing"]
     Sync --> Events["Event Runtime\nCausal Ordering • Streams"]
     Events --> Persistence["Persistence Layer\nWAL + Snapshots + Replay"]
     Persistence --> Compression["Semantic Compression"]
-    Compression --> Transport["Transport Abstraction\nQUIC • TCP • WebTransport"]
+    Compression --> Transport["Transport Abstraction\nQUIC • TCP • WebSocket"]
 ```
 
 ---
@@ -226,9 +225,8 @@ First-class support for AI agents:
 
 ### 15) Transport Abstraction
 
-- **Primary:** QUIC (via `quinn` or similar) — 0-RTT, multiplexing, excellent congestion control
-- **Fallbacks:** WebTransport, TCP/WebSocket, raw channels
-- SPARK can be used as a specialized local P2P transport backend when beneficial
+- **Primary:** QUIC — 0-RTT, multiplexing, excellent congestion control
+- **Fallbacks:** WebSocket, TCP
 - Transport details are completely hidden from higher layers
 
 ---
@@ -236,20 +234,18 @@ First-class support for AI agents:
 ### 16) SDK & Developer Experience
 
 **Core SDKs:**
-- **Rust** — Maximum performance and control
-- **TypeScript** — Web, Node.js, Edge, browser
 - **Go** — Servers and heavy agents
+- **TypeScript** — Web, Node.js, Edge, browser
 
-**Example API feel (Rust):**
-```rust
-let room = kairos.join("workspace:docs-42").await?;
-let doc = room.document("spec.md").await?;
+**Example API feel (Go):**
+```go
+room, _ := client.Join(ctx, "workspace:docs-42")
+doc, _ := room.Document(ctx, "spec.md")
 
-doc.text("content")
-   .insert(100, "New section")
-   .await?;
+doc.Insert(ctx, 100, "New section")
 
-let sub = doc.subscribe(|delta| { ... }).await;
+sub := doc.Subscribe(ctx, func(ev *kairos.Event) { ... })
+defer sub()
 ```
 
 - Optimistic updates + automatic rollback on conflict
@@ -299,5 +295,5 @@ KAIROS excels in durability, replayability, agent support, and self-hostability 
 - `kairos-cli` — Management and debugging tools
 - `kairos-relay` — Optional self-hostable relay/rendezvous
 
-**Phased rollout** starting with Rust SDK + QUIC + basic CRDT document sync.
+**Phased rollout** starting with Go SDK + QUIC + basic CRDT document sync.
 

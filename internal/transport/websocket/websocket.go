@@ -1,8 +1,9 @@
+// Package websocket provides WebSocket transport for peer communication.
 package websocket
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // SHA1 required by WebSocket RFC 6455
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -74,7 +75,7 @@ func wsUpgrade(conn net.Conn, client bool) error {
 		return fmt.Errorf("no Sec-WebSocket-Key found")
 	}
 
-	h := sha1.New()
+	h := sha1.New() //nolint:gosec // SHA1 required by WebSocket RFC 6455
 	h.Write([]byte(key + wsGUID))
 	accept := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -132,7 +133,7 @@ func (c *wsConn) Receive(ctx context.Context) (transport.Message, error) {
 		if frame.opcode == 9 {
 			pong := []byte{0x8A, 0x02, frame.payload[0], frame.payload[1]}
 			c.mu.Lock()
-			c.conn.Write(pong)
+			_, _ = c.conn.Write(pong)
 			c.mu.Unlock()
 			continue
 		}
@@ -245,11 +246,11 @@ func encodeWSFrame(msg wsFrame) ([]byte, error) {
 	case length <= 125:
 		header = append(header, byte(length))
 	case length <= 65535:
-		header = append(header, 126, byte(length>>8), byte(length))
+		header = append(header, 126, byte(length>>8), byte(length)) //nolint:gosec // safe: length <= 65535
 	default:
 		header = append(header, 127)
 		for i := 7; i >= 0; i-- {
-			header = append(header, byte(length>>(8*i)))
+			header = append(header, byte(length>>(8*i))) //nolint:gosec // safe: length is bounded
 		}
 	}
 
@@ -263,7 +264,7 @@ func (t *WebSocketTransport) Dial(ctx context.Context, addr string) (transport.C
 	}
 
 	if err := wsUpgrade(conn, true); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
@@ -294,12 +295,10 @@ func (l *wsListener) acceptLoop() {
 		}
 
 		if err := wsUpgrade(conn, false); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			continue
 		}
 
 		l.conns <- newWsConn(conn)
 	}
 }
-
-

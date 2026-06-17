@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"github.com/supunhg/kairos/internal/crypto"
 	"github.com/supunhg/kairos/internal/identity"
 )

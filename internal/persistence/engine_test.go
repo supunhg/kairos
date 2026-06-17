@@ -1,11 +1,12 @@
 package persistence
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 func TestOpenClose(t *testing.T) {
@@ -14,7 +15,7 @@ func TestOpenClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.Close()
+	_ = e.Close()
 
 	if _, err := os.Stat(filepath.Join(dir, "manifest.json")); err != nil {
 		t.Fatal("manifest should exist after close:", err)
@@ -24,7 +25,7 @@ func TestOpenClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	ec, sc := e2.Stats()
 	if ec != 0 {
@@ -46,19 +47,19 @@ func TestAppendAndReplay(t *testing.T) {
 		{Id: "e1", PayloadType: "test", HlcTimestamp: 100, GroupId: "g1"},
 		{Id: "e2", PayloadType: "test", HlcTimestamp: 200, GroupId: "g1"},
 	}
-	if err := e.Append(nil, events); err != nil {
+	if err := e.Append(context.TODO(), events); err != nil {
 		t.Fatal(err)
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	var replayed []*v1.Event
-	if err := e2.Replay(nil, func(ev *v1.Event) error {
+	if err := e2.Replay(context.TODO(), func(ev *v1.Event) error {
 		replayed = append(replayed, ev)
 		return nil
 	}); err != nil {
@@ -79,7 +80,7 @@ func TestSnapshotAndRestore(t *testing.T) {
 
 	for i := 0; i < 25; i++ {
 		id := "ev-" + string(rune('0'+i%10))
-		if err := e.Append(nil, []*v1.Event{{
+		if err := e.Append(context.TODO(), []*v1.Event{{
 			Id:           id,
 			PayloadType:  "test",
 			HlcTimestamp: int64(i),
@@ -88,13 +89,13 @@ func TestSnapshotAndRestore(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	ec, sc := e2.Stats()
 	if sc == 0 {
@@ -104,7 +105,7 @@ func TestSnapshotAndRestore(t *testing.T) {
 		t.Fatal("expected events to persist")
 	}
 
-	restored, err := e2.RestoreLatest(nil)
+	restored, err := e2.RestoreLatest(context.TODO())
 	if err != nil {
 		t.Fatalf("RestoreLatest error: %v", err)
 	}
@@ -123,13 +124,13 @@ func TestSnapshotFiles(t *testing.T) {
 	}
 
 	for i := 0; i < 20; i++ {
-		e.Append(nil, []*v1.Event{{
+		_ = e.Append(context.TODO(), []*v1.Event{{
 			Id:           "e-" + string(rune('0'+i%10)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i),
 		}})
 	}
-	e.Close()
+	_ = e.Close()
 
 	files, err := SnapshotFiles(dir)
 	if err != nil {
@@ -148,22 +149,22 @@ func TestReplayRange(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		e.Append(nil, []*v1.Event{{
+		_ = e.Append(context.TODO(), []*v1.Event{{
 			Id:           "er-" + string(rune('0'+i)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i * 100),
 		}})
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	var events []*v1.Event
-	e2.ReplayRange(nil, 200, 500, func(ev *v1.Event) error {
+	_ = e2.ReplayRange(context.TODO(), 200, 500, func(ev *v1.Event) error {
 		events = append(events, ev)
 		return nil
 	})
@@ -182,7 +183,7 @@ func TestManualSnapshot(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		id := "ms-" + string(rune('0'+i))
-		if err := e.Append(nil, []*v1.Event{{
+		if err := e.Append(context.TODO(), []*v1.Event{{
 			Id:           id,
 			PayloadType:  "test",
 			HlcTimestamp: int64(i),
@@ -200,15 +201,15 @@ func TestManualSnapshot(t *testing.T) {
 		t.Fatalf("expected 1 snapshot, got %d", len(snaps))
 	}
 
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
-	restored, err := e2.RestoreLatest(nil)
+	restored, err := e2.RestoreLatest(context.TODO())
 	if err != nil {
 		t.Fatalf("RestoreLatest error: %v", err)
 	}
@@ -227,7 +228,7 @@ func TestCrashRecoveryNormal(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		if err := e.Append(nil, []*v1.Event{{
+		if err := e.Append(context.TODO(), []*v1.Event{{
 			Id:           "cr-" + string(rune('A'+i)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i * 100),
@@ -236,13 +237,13 @@ func TestCrashRecoveryNormal(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	ec, _ := e2.Stats()
 	if ec != 5 {
@@ -250,7 +251,7 @@ func TestCrashRecoveryNormal(t *testing.T) {
 	}
 
 	var replayed []*v1.Event
-	if err := e2.Replay(nil, func(ev *v1.Event) error {
+	if err := e2.Replay(context.TODO(), func(ev *v1.Event) error {
 		replayed = append(replayed, ev)
 		return nil
 	}); err != nil {
@@ -269,7 +270,7 @@ func TestCrashRecoveryWithSnapshot(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		if err := e.Append(nil, []*v1.Event{{
+		if err := e.Append(context.TODO(), []*v1.Event{{
 			Id:           "snap-cr-" + string(rune('A'+i)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i * 100),
@@ -278,13 +279,13 @@ func TestCrashRecoveryWithSnapshot(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	ec, sc := e2.Stats()
 	if ec != 10 {
@@ -294,7 +295,7 @@ func TestCrashRecoveryWithSnapshot(t *testing.T) {
 		t.Fatal("expected at least 1 snapshot after recovery")
 	}
 
-	restored, err := e2.RestoreLatest(nil)
+	restored, err := e2.RestoreLatest(context.TODO())
 	if err != nil {
 		t.Fatalf("RestoreLatest error: %v", err)
 	}
@@ -311,7 +312,7 @@ func TestCrashRecoveryManifestBehind(t *testing.T) {
 	}
 
 	for i := 0; i < 3; i++ {
-		if err := e.Append(nil, []*v1.Event{{
+		if err := e.Append(context.TODO(), []*v1.Event{{
 			Id:           "mf-" + string(rune('A'+i)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i * 100),
@@ -320,13 +321,13 @@ func TestCrashRecoveryManifestBehind(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	e.Close()
+	_ = e.Close()
 
 	e2, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e2.Close()
+	defer func() { _ = e2.Close() }()
 
 	ec, _ := e2.Stats()
 	if ec != 3 {
@@ -334,7 +335,7 @@ func TestCrashRecoveryManifestBehind(t *testing.T) {
 	}
 
 	for i := 3; i < 6; i++ {
-		if err := e2.Append(nil, []*v1.Event{{
+		if err := e2.Append(context.TODO(), []*v1.Event{{
 			Id:           "mf-" + string(rune('A'+i)),
 			PayloadType:  "test",
 			HlcTimestamp: int64(i * 100),
@@ -343,13 +344,13 @@ func TestCrashRecoveryManifestBehind(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	e2.Close()
+	_ = e2.Close()
 
 	e3, err := Open(dir, Options{SnapshotInterval: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer e3.Close()
+	defer func() { _ = e3.Close() }()
 
 	ec3, _ := e3.Stats()
 	if ec3 != 6 {

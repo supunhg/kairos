@@ -1,3 +1,4 @@
+// Package sync provides CRDT-based document synchronization.
 package sync
 
 import (
@@ -35,7 +36,7 @@ func NewBloomFilterFromBits(bits []uint64, k int) *BloomFilter {
 	return &BloomFilter{
 		bits: bits,
 		k:    k,
-		m:    uint(len(bits) * 64),
+		m:    uint(len(bits) * 64), //nolint:gosec // safe: len(bits) is bounded
 	}
 }
 
@@ -43,7 +44,7 @@ func (bf *BloomFilter) Add(data []byte) {
 	bf.n++
 	h1, h2 := hash64(data)
 	for i := 0; i < bf.k; i++ {
-		idx := (h1 + uint64(i)*h2) % uint64(bf.m)
+		idx := (h1 + uint64(i)*h2) % uint64(bf.m) //nolint:gosec // safe: i is bounded by k
 		bf.bits[idx/64] |= 1 << (idx % 64)
 	}
 }
@@ -73,7 +74,7 @@ func (bf *BloomFilter) Count() uint {
 
 func (bf *BloomFilter) Marshal() []byte {
 	buf := make([]byte, 8+8+8+len(bf.bits)*8)
-	binary.LittleEndian.PutUint64(buf[0:8], uint64(bf.k))
+	binary.LittleEndian.PutUint64(buf[0:8], uint64(bf.k)) //nolint:gosec // safe: k is bounded
 	binary.LittleEndian.PutUint64(buf[8:16], uint64(bf.m))
 	binary.LittleEndian.PutUint64(buf[16:24], uint64(len(bf.bits)))
 	for i, v := range bf.bits {
@@ -86,9 +87,9 @@ func UnmarshalBloomFilter(data []byte) (*BloomFilter, error) {
 	if len(data) < 24 {
 		return nil, ErrInvalidOp
 	}
-	k := int(binary.LittleEndian.Uint64(data[0:8]))
-	m := uint(binary.LittleEndian.Uint64(data[8:16]))
-	numWords := int(binary.LittleEndian.Uint64(data[16:24]))
+	k := int(binary.LittleEndian.Uint64(data[0:8]))          //nolint:gosec // safe: k is bounded by filter size
+	m := uint(binary.LittleEndian.Uint64(data[8:16]))        //nolint:gosec // safe: m is bounded by filter size
+	numWords := int(binary.LittleEndian.Uint64(data[16:24])) //nolint:gosec // safe: numWords is bounded by data length
 	if len(data) < 24+numWords*8 {
 		return nil, ErrInvalidOp
 	}

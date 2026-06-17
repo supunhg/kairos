@@ -42,9 +42,9 @@ func TestAgentMemorySnapshot(t *testing.T) {
 	mem := NewAgentMemory(engine, "agent-mem-3")
 	ctx := context.Background()
 
-	mem.Set(ctx, "a", "1")
-	mem.Set(ctx, "b", "2")
-	mem.Set(ctx, "c", "3")
+	_ = mem.Set(ctx, "a", "1")
+	_ = mem.Set(ctx, "b", "2")
+	_ = mem.Set(ctx, "c", "3")
 
 	snap := mem.Snapshot()
 	if len(snap) != 3 {
@@ -88,7 +88,7 @@ func TestBlackboardSubscribe(t *testing.T) {
 	})
 	defer unsub()
 
-	board.Post(ctx, "agent1", "ping")
+	_, _ = board.Post(ctx, "agent1", "ping")
 
 	select {
 	case msg := <-received:
@@ -153,7 +153,7 @@ func TestAgentEventHandler(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	agent.Start(ctx)
+	_ = agent.Start(ctx)
 
 	select {
 	case evt := <-received:
@@ -250,8 +250,8 @@ func TestSupervisorListByStatus(t *testing.T) {
 		mem := NewAgentMemory(engine, "list-mem-"+id)
 		board := NewBlackboard(engine, "list-board-"+id)
 		agent := NewAgent(id, mem, board)
-		sup.Register(agent)
-		agent.Start(ctx)
+		_ = sup.Register(agent)
+		_ = agent.Start(ctx)
 	}
 
 	running := sup.ListByStatus(StatusRunning)
@@ -266,7 +266,7 @@ func TestAgentMemoryAcrossGroups(t *testing.T) {
 	mem2 := NewAgentMemory(engine, "shared-mem")
 	ctx := context.Background()
 
-	mem1.Set(ctx, "key", "value")
+	_ = mem1.Set(ctx, "key", "value")
 
 	val, ok := mem2.Get(ctx, "key")
 	if !ok {
@@ -314,7 +314,7 @@ func TestSupervisorStopAll(t *testing.T) {
 		mem := NewAgentMemory(engine, "stopall-mem-"+id)
 		board := NewBlackboard(engine, "stopall-board-"+id)
 		agent := NewAgent(id, mem, board)
-		sup.Spawn(ctx, agent)
+		_ = sup.Spawn(ctx, agent)
 	}
 
 	errs := sup.StopAll(ctx)

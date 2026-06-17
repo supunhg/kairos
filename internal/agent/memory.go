@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	syncengine "github.com/supunhg/kairos/internal/sync"
 	"google.golang.org/protobuf/proto"
 )

@@ -1,9 +1,11 @@
+// Package telemetry provides Prometheus metrics and OpenTelemetry tracing.
 package telemetry
 
 import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -102,16 +104,17 @@ func NewMetricsServer(addr string, m *Metrics) *MetricsServer {
 	mux.Handle("/metrics", promhttp.HandlerFor(m.Registry, promhttp.HandlerOpts{}))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 	return &MetricsServer{
 		server: &http.Server{
-			Addr:    addr,
-			Handler: mux,
+			Addr:              addr,
+			Handler:           mux,
+			ReadHeaderTimeout: 10 * time.Second,
 		},
 	}
 }

@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	v1 "github.com/supunhg/kairos/api/v1"
 	"github.com/supunhg/kairos/internal/persistence"
 	"github.com/supunhg/kairos/internal/sync"
-	"github.com/supunhg/kairos/api/v1"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "open persistence: %v\n", err)
 		os.Exit(1)
 	}
-	defer eng.Close()
+	defer func() { _ = eng.Close() }()
 
 	evCount, snapCount := eng.Stats()
 	fmt.Fprintf(os.Stderr, "Events: %d, Snapshots: %d\n", evCount, snapCount)

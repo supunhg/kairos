@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 type Store interface {
@@ -20,14 +20,14 @@ type Store interface {
 }
 
 type IterOptions struct {
-	AfterID      string
-	BeforeID     string
-	GroupID      string
-	SessionID    string
-	Limit        int
-	Reverse      bool
-	SinceHLC     int64
-	UntilHLC     int64
+	AfterID   string
+	BeforeID  string
+	GroupID   string
+	SessionID string
+	Limit     int
+	Reverse   bool
+	SinceHLC  int64
+	UntilHLC  int64
 }
 
 type Iterator interface {
@@ -46,13 +46,12 @@ type Stats struct {
 }
 
 type AppendOnlyStore struct {
-	path       string
-	file       *os.File
-	mu         sync.RWMutex
-	index      map[string]int64
-	indexMu    sync.RWMutex
-	stats      Stats
-	closed     bool
+	path   string
+	file   *os.File
+	mu     sync.RWMutex
+	index  map[string]int64
+	stats  Stats
+	closed bool
 }
 
 func NewAppendOnlyStore(path string, opts ...StoreOption) (*AppendOnlyStore, error) {
@@ -69,7 +68,7 @@ func NewAppendOnlyStore(path string, opts ...StoreOption) (*AppendOnlyStore, err
 type StoreOption func(*AppendOnlyStore)
 
 func (s *AppendOnlyStore) open() error {
-	f, err := os.OpenFile(s.path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	f, err := os.OpenFile(s.path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0600)
 	if err != nil {
 		return err
 	}

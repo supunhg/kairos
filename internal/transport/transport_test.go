@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"net"
 	"testing"
 )
 
@@ -64,19 +63,3 @@ func TestRegisterOverwrite(t *testing.T) {
 		t.Fatalf("expected 1 transport after overwrite, got %d", len(available))
 	}
 }
-
-type mockConn struct{}
-
-func (m *mockConn) Send(ctx context.Context, msg Message) error   { return nil }
-func (m *mockConn) Receive(ctx context.Context) (Message, error)  { return Message{}, nil }
-func (m *mockConn) Close() error                                  { return nil }
-
-type mockListener struct {
-	addr net.Addr
-}
-
-func (m *mockListener) Accept(ctx context.Context) (Connection, error) {
-	return &mockConn{}, nil
-}
-func (m *mockListener) Close() error                                  { return nil }
-func (m *mockListener) Addr() net.Addr                                { return m.addr }

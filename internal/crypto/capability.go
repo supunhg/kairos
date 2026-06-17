@@ -1,3 +1,4 @@
+// Package crypto provides key management, signing, and session encryption.
 package crypto
 
 import (
@@ -17,9 +18,9 @@ type Capability struct {
 }
 
 type CapabilityToken struct {
-	Cap   Capability `json:"cap"`
-	Sig   []byte     `json:"sig"`
-	raw   string
+	Cap Capability `json:"cap"`
+	Sig []byte     `json:"sig"`
+	raw string
 }
 
 func IssueCapability(cap Capability, priv ed25519.PrivateKey) (*CapabilityToken, error) {

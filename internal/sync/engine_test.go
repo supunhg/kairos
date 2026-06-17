@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 func TestTextInsertAndContent(t *testing.T) {
@@ -30,8 +30,8 @@ func TestSequentialInserts(t *testing.T) {
 	e := NewEngine("node1")
 	ctx := context.Background()
 
-	e.TextInsert(ctx, "doc1", 0, "Hel")
-	e.TextInsert(ctx, "doc1", 3, "lo World")
+	_, _ = e.TextInsert(ctx, "doc1", 0, "Hel")
+	_, _ = e.TextInsert(ctx, "doc1", 3, "lo World")
 
 	content := e.TextContent("doc1")
 	if content != "Hello World" {
@@ -69,7 +69,7 @@ func TestSubscribe(t *testing.T) {
 	})
 	defer unsub()
 
-	e.TextInsert(ctx, "doc1", 0, "test")
+	_, _ = e.TextInsert(ctx, "doc1", 0, "test")
 
 	select {
 	case ev := <-received:
@@ -85,8 +85,8 @@ func TestVersionVector(t *testing.T) {
 	e := NewEngine("node1")
 	ctx := context.Background()
 
-	e.TextInsert(ctx, "doc1", 0, "a")
-	e.TextInsert(ctx, "doc1", 1, "b")
+	_, _ = e.TextInsert(ctx, "doc1", 0, "a")
+	_, _ = e.TextInsert(ctx, "doc1", 1, "b")
 
 	vv := e.GetVersionVector("doc1")
 	if ts, ok := vv["node1"]; !ok || ts == 0 {

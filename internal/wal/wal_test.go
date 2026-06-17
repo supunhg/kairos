@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 )
 
 func TestOpen(t *testing.T) {
@@ -15,7 +15,7 @@ func TestOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w.Close()
+	defer func() { _ = w.Close() }()
 
 	if w.Segments() != 1 {
 		t.Fatalf("expected 1 segment, got %d", w.Segments())
@@ -37,13 +37,13 @@ func TestWriteAndReplay(t *testing.T) {
 	if err := w.Write(events); err != nil {
 		t.Fatal(err)
 	}
-	w.Close()
+	_ = w.Close()
 
 	w2, err := Open(dir, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w2.Close()
+	defer func() { _ = w2.Close() }()
 
 	var replayed []*v1.Event
 	if err := w2.Replay(func(ev *v1.Event) error {
@@ -78,20 +78,20 @@ func TestSegmentRotation(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	w.Close()
+	_ = w.Close()
 
 	w2, err := Open(dir, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w2.Close()
+	defer func() { _ = w2.Close() }()
 
 	if w2.Segments() < 2 {
 		t.Fatalf("expected multiple segments, got %d", w2.Segments())
 	}
 
 	var count int
-	w2.Replay(func(ev *v1.Event) error {
+	_ = w2.Replay(func(ev *v1.Event) error {
 		count++
 		return nil
 	})
@@ -116,28 +116,28 @@ func TestCRCIntegrity(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	w.Close()
+	_ = w.Close()
 
 	entries, _ := os.ReadDir(dir)
 	if len(entries) == 0 {
 		t.Fatal("no WAL segments")
 	}
 	path := filepath.Join(dir, entries[0].Name())
-	data, _ := os.ReadFile(path)
+	data, _ := os.ReadFile(path) //nolint:gosec // G304: test file from known directory
 
 	if len(data) > 28 {
 		data[len(data)-1] ^= 0xFF
-		os.WriteFile(path, data, 0644)
+		_ = os.WriteFile(path, data, 0600) //nolint:gosec // G703: test file from known directory
 	}
 
 	w2, err := Open(dir, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w2.Close()
+	defer func() { _ = w2.Close() }()
 
 	var count int
-	err = w2.Replay(func(ev *v1.Event) error {
+	_ = w2.Replay(func(ev *v1.Event) error {
 		count++
 		return nil
 	})
@@ -153,7 +153,7 @@ func TestConcurrentWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w.Close()
+	defer func() { _ = w.Close() }()
 
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
@@ -164,7 +164,7 @@ func TestConcurrentWrite(t *testing.T) {
 				PayloadType:  "concurrent",
 				HlcTimestamp: int64(n),
 			}
-			w.Write([]*v1.Event{ev})
+			_ = w.Write([]*v1.Event{ev})
 			done <- true
 		}(i)
 	}
@@ -173,7 +173,7 @@ func TestConcurrentWrite(t *testing.T) {
 	}
 
 	var count int
-	w.Replay(func(ev *v1.Event) error {
+	_ = w.Replay(func(ev *v1.Event) error {
 		count++
 		return nil
 	})

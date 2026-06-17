@@ -1,3 +1,4 @@
+// Package wal provides a write-ahead log for durable event storage.
 package wal
 
 import (
@@ -13,16 +14,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/supunhg/kairos/api/v1"
+	v1 "github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	magicNumber  = 0x4B414952
-	segmentExt   = ".wal"
-	entryHeader  = 8 // crc32(4) + length(4)
-	defaultSize  = 64 << 20 // 64MB segments
-	defaultSync  = 1 << 20  // sync every 1MB
+	magicNumber = 0x4B414952
+	segmentExt  = ".wal"
+	entryHeader = 8        // crc32(4) + length(4)
+	defaultSize = 64 << 20 // 64MB segments
+	defaultSync = 1 << 20  // sync every 1MB
 )
 
 type Entry struct {
@@ -61,7 +62,7 @@ func Open(dir string, opts Options) (*WAL, error) {
 	if opts.SyncInterval <= 0 {
 		opts.SyncInterval = defaultSync
 	}
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return nil, err
 	}
 	w := &WAL{dir: dir, opts: opts}
@@ -88,7 +89,7 @@ func (w *WAL) Write(events []*v1.Event) error {
 		entry := make([]byte, entryHeader+len(data))
 		crc := crc32.ChecksumIEEE(data)
 		binary.BigEndian.PutUint32(entry[:4], crc)
-		binary.BigEndian.PutUint32(entry[4:8], uint32(len(data)))
+		binary.BigEndian.PutUint32(entry[4:8], uint32(len(data))) //nolint:gosec // safe: data length bounded by event size
 		copy(entry[8:], data)
 
 		if _, err := w.active.file.Write(entry); err != nil {
@@ -192,8 +193,8 @@ func (w *WAL) Close() error {
 	w.closed = true
 
 	for _, seg := range w.segments {
-		seg.file.Sync()
-		seg.file.Close()
+		_ = seg.file.Sync()
+		_ = seg.file.Close()
 	}
 	w.segments = nil
 	w.active = nil
@@ -243,8 +244,8 @@ func (w *WAL) openActive() error {
 		return w.newSegment()
 	}
 	last := w.segments[len(w.segments)-1]
-	last.file.Close()
-	f, err := os.OpenFile(last.path, os.O_RDWR|os.O_APPEND, 0644)
+	_ = last.file.Close()
+	f, err := os.OpenFile(last.path, os.O_RDWR|os.O_APPEND, 0600)
 	if err != nil {
 		return err
 	}
@@ -255,7 +256,7 @@ func (w *WAL) openActive() error {
 
 func (w *WAL) rotate() error {
 	if w.opts.Sync && w.active != nil {
-		w.active.file.Sync()
+		_ = w.active.file.Sync()
 	}
 	w.maxActive++
 	if err := w.newSegment(); err != nil {
@@ -276,8 +277,8 @@ func (w *WAL) compact() {
 	remove := len(w.segments) - maxSegs
 	for i := 0; i < remove; i++ {
 		seg := w.segments[i]
-		seg.file.Close()
-		os.Remove(seg.path)
+		_ = seg.file.Close()
+		_ = os.Remove(seg.path)
 	}
 	w.segments = w.segments[remove:]
 }
@@ -285,7 +286,7 @@ func (w *WAL) compact() {
 func (w *WAL) newSegment() error {
 	name := fmt.Sprintf("%020d-%s%s", time.Now().UnixNano(), randStr(8), segmentExt)
 	path := filepath.Join(w.dir, name)
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0600) //nolint:gosec // G304: WAL segment path from known directory
 	if err != nil {
 		return err
 	}
@@ -300,13 +301,13 @@ func (w *WAL) newSegment() error {
 }
 
 func openSegment(path string) (*segment, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // G304: WAL segment path from known directory
 	if err != nil {
 		return nil, err
 	}
 	info, err := f.Stat()
 	if err != nil {
-		f.Close()
+		_ = f.Close()
 		return nil, err
 	}
 	return &segment{
@@ -330,5 +331,3 @@ func randStr(n int) string {
 	}
 	return string(b)
 }
-
-

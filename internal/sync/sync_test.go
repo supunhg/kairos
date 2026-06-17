@@ -67,7 +67,7 @@ func TestSyncManagerMergeVersionVector(t *testing.T) {
 	ctx := context.Background()
 	sm := NewSyncManager(engine)
 
-	engine.TextInsert(ctx, "doc1", 0, "Hello")
+	_, _ = engine.TextInsert(ctx, "doc1", 0, "Hello")
 
 	peerVV := map[string]int64{
 		"node2": 100,
@@ -84,7 +84,7 @@ func TestSyncManagerComputeDelta(t *testing.T) {
 	ctx := context.Background()
 	sm := NewSyncManager(engine)
 
-	engine.TextInsert(ctx, "doc1", 0, "Hello")
+	_, _ = engine.TextInsert(ctx, "doc1", 0, "Hello")
 
 	sm.RegisterPeer("peer-1")
 
@@ -103,7 +103,7 @@ func TestSyncManagerComputeDeltaAfterUpdate(t *testing.T) {
 	ctx := context.Background()
 	sm := NewSyncManager(engine)
 
-	engine.TextInsert(ctx, "doc1", 0, "A")
+	_, _ = engine.TextInsert(ctx, "doc1", 0, "A")
 
 	sm.RegisterPeer("peer-1")
 

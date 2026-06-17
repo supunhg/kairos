@@ -13,7 +13,7 @@ func TestNewClient(t *testing.T) {
 	if c.nodeID != "test-node" {
 		t.Fatalf("expected test-node, got %s", c.nodeID)
 	}
-	c.Close()
+	_ = c.Close()
 }
 
 func TestJoinAndDocument(t *testing.T) {
@@ -34,12 +34,12 @@ func TestJoinAndDocument(t *testing.T) {
 		t.Fatalf("expected session-1/doc-1, got %s", doc.ID())
 	}
 
-	c.Close()
+	_ = c.Close()
 }
 
 func TestTextInsertAndRead(t *testing.T) {
 	c := New("test-node")
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx := context.Background()
 	sess, _ := c.Join(ctx, "test-session")
@@ -64,7 +64,7 @@ func TestTextInsertAndRead(t *testing.T) {
 
 func TestSubscribe(t *testing.T) {
 	c := New("test-node")
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx := context.Background()
 	sess, _ := c.Join(ctx, "sub-session")
@@ -76,7 +76,7 @@ func TestSubscribe(t *testing.T) {
 	})
 	defer unsub()
 
-	doc.Insert(ctx, 0, "test-event")
+	_, _ = doc.Insert(ctx, 0, "test-event")
 
 	select {
 	case ev := <-received:
@@ -90,7 +90,7 @@ func TestSubscribe(t *testing.T) {
 
 func TestMultipleDocuments(t *testing.T) {
 	c := New("test-node")
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx := context.Background()
 	sess, _ := c.Join(ctx, "multi-session")
@@ -98,8 +98,8 @@ func TestMultipleDocuments(t *testing.T) {
 	doc1, _ := sess.Document(ctx, "doc-1")
 	doc2, _ := sess.Document(ctx, "doc-2")
 
-	doc1.Insert(ctx, 0, "Text A")
-	doc2.Insert(ctx, 0, "Text B")
+	_, _ = doc1.Insert(ctx, 0, "Text A")
+	_, _ = doc2.Insert(ctx, 0, "Text B")
 
 	if doc1.Text(ctx) != "Text A" {
 		t.Fatalf("expected 'Text A', got '%s'", doc1.Text(ctx))

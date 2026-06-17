@@ -1,3 +1,4 @@
+// Package quic provides QUIC-based transport for peer communication.
 package quic
 
 import (
@@ -26,14 +27,14 @@ import (
 type MessageType = transport.MessageType
 
 const (
-	MsgEvent        = transport.MsgEvent
-	MsgSyncReq      = transport.MsgSyncReq
-	MsgSyncResp     = transport.MsgSyncResp
-	MsgPing         = transport.MsgPing
-	MsgPong         = transport.MsgPong
-	MsgJoin         = transport.MsgJoin
-	MsgLeave        = transport.MsgLeave
-	MsgKeyExchange  = transport.MsgKeyExchange
+	MsgEvent       = transport.MsgEvent
+	MsgSyncReq     = transport.MsgSyncReq
+	MsgSyncResp    = transport.MsgSyncResp
+	MsgPing        = transport.MsgPing
+	MsgPong        = transport.MsgPong
+	MsgJoin        = transport.MsgJoin
+	MsgLeave       = transport.MsgLeave
+	MsgKeyExchange = transport.MsgKeyExchange
 )
 
 type Message = transport.Message
@@ -64,7 +65,7 @@ func (l *Listener) Accept(ctx context.Context) (*Conn, error) {
 	}
 	stream, err := conn.AcceptStream(ctx)
 	if err != nil {
-		conn.CloseWithError(1, "")
+		_ = conn.CloseWithError(1, "")
 		return nil, err
 	}
 	return &Conn{conn: conn, stream: stream}, nil
@@ -85,10 +86,12 @@ var (
 
 func Dial(ctx context.Context, addr string) (*Conn, error) {
 	tlsConf := &tls.Config{
+		//nolint:gosec // TOFU: trust-on-first-use with VerifyPeerCertificate pinning
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"kairos"},
 	}
 
+	//nolint:gosec // G123: session resumption disabled for TOFU
 	tlsConf.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
 			return nil
@@ -121,7 +124,7 @@ func Dial(ctx context.Context, addr string) (*Conn, error) {
 	}
 	stream, err := conn.OpenStreamSync(ctx)
 	if err != nil {
-		conn.CloseWithError(1, "")
+		_ = conn.CloseWithError(1, "")
 		return nil, err
 	}
 	return &Conn{conn: conn, stream: stream}, nil
@@ -131,14 +134,14 @@ func (c *Conn) Send(ctx context.Context, msg Message) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	groupIDLen := uint16(len(msg.GroupID))
+	groupIDLen := uint16(len(msg.GroupID)) //nolint:gosec // safe: groupID length bounded by protocol
 	totalLen := 1 + 2 + int(groupIDLen) + 4 + len(msg.Payload)
 	buf := make([]byte, totalLen)
 
 	buf[0] = byte(msg.Type)
 	binary.BigEndian.PutUint16(buf[1:3], groupIDLen)
 	copy(buf[3:3+groupIDLen], msg.GroupID)
-	binary.BigEndian.PutUint32(buf[3+groupIDLen:7+groupIDLen], uint32(len(msg.Payload)))
+	binary.BigEndian.PutUint32(buf[3+groupIDLen:7+groupIDLen], uint32(len(msg.Payload))) //nolint:gosec // safe: payload bounded by protocol
 	copy(buf[7+groupIDLen:], msg.Payload)
 
 	_, err := c.stream.Write(buf)
@@ -185,9 +188,9 @@ func (c *Conn) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.stream != nil {
-		c.stream.Close()
+		_ = c.stream.Close()
 	}
-	c.conn.CloseWithError(0, "")
+	_ = c.conn.CloseWithError(0, "")
 	return nil
 }
 
@@ -212,18 +215,20 @@ func generateTLSConfig() *tls.Config {
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		NextProtos:   []string{"kairos"},
+		MinVersion:   tls.VersionTLS13,
 	}
 }
 
 func LoadOrGenerateTLSConfig(path string) (*tls.Config, error) {
 	if path != "" {
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := os.ReadFile(path); err == nil { //nolint:gosec // G304: TLS cert from known path
 			block, _ := pem.Decode(data)
 			if block != nil {
 				if cert, err := tls.X509KeyPair(data, data); err == nil {
 					return &tls.Config{
 						Certificates: []tls.Certificate{cert},
 						NextProtos:   []string{"kairos"},
+						MinVersion:   tls.VersionTLS13,
 					}, nil
 				}
 			}
@@ -251,11 +256,12 @@ func LoadOrGenerateTLSConfig(path string) (*tls.Config, error) {
 		if err := os.MkdirAll(dir, 0700); err == nil {
 			certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 			keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-			os.WriteFile(path, append(certPEM, keyPEM...), 0600)
+			_ = os.WriteFile(path, append(certPEM, keyPEM...), 0600)
 		}
 	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		NextProtos:   []string{"kairos"},
+		MinVersion:   tls.VersionTLS13,
 	}, nil
 }

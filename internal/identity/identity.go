@@ -1,3 +1,4 @@
+// Package identity provides ed25519 key management and file persistence.
 package identity
 
 import (
@@ -84,7 +85,7 @@ func SaveIdentityFile(path string, ident *Identity) error {
 }
 
 func LoadIdentityFile(path string) (*Identity, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // G304: identity file path from known location
 	if err != nil {
 		return nil, err
 	}

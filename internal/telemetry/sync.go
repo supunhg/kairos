@@ -10,7 +10,6 @@ import (
 type Instrumentation struct {
 	tel     *Telemetry
 	metrics *Metrics
-	attrs   []attribute.KeyValue
 }
 
 func NewInstrumentation(tel *Telemetry, metrics *Metrics) *Instrumentation {
@@ -56,5 +55,3 @@ func (inst *Instrumentation) GroupCreated(_ context.Context, groupID string, gro
 func (inst *Instrumentation) SnapshotTaken(_ context.Context, groupID string, eventCount int) {
 	inst.metrics.SnapshotsTotal.Inc()
 }
-
-
