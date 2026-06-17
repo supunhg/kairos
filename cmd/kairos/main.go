@@ -75,7 +75,12 @@ func main() {
 	fmt.Printf("KAIROS node '%s' running on %s\n", *nodeID, *addr)
 	fmt.Println("Press Ctrl+C to exit")
 
-	<-sig
-	fmt.Println("\nShutting down...")
+	select {
+	case <-sig:
+		fmt.Println("\nShutting down...")
+	case <-ctx.Done():
+	}
+
+	cancel()
 	client.Close()
 }

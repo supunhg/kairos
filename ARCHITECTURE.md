@@ -9,7 +9,7 @@
 - **Kairos** (Ancient Greek): The right or opportune moment — representing perfect synchronization, timely state convergence, and the "lived time" of collaborative/agent systems (as opposed to mere chronological time).
 - Unique, memorable, sophisticated, and not a common English word.
 - Evokes real-time orchestration, durable history, and opportune coordination.
-- Brandable: `kairos.dev`, `kairos.rs`, CLI `kairos`, etc.
+- Brandable: `kairos.dev`, `kairos.go`, CLI `kairos`, etc.
 - Distinct from **SPARK** (the lean, high-performance P2P transport/file delivery system).
 
 ---
@@ -18,7 +18,7 @@
 
 **Status:** Draft v0.1  
 **Owner:** Supun Hewagamage  
-**Model:** Solo-builder, Rust-first, production-grade distributed systems infrastructure  
+**Model:** Solo-builder, Go-based, production-grade distributed systems infrastructure  
 **Primary wedge:** A local-first, durable, stateful distributed runtime for realtime collaborative applications, AI agent systems, and persistent edge computing.  
 **Last revised:** 2026-05
 

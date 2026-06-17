@@ -37,12 +37,14 @@ type WAL struct {
 	active    *segment
 	opts      Options
 	closed    bool
+	maxActive int
 }
 
 type Options struct {
 	MaxSegmentSize int
 	SyncInterval   int
 	Sync           bool
+	MaxSegments    int
 }
 
 type segment struct {
@@ -255,7 +257,29 @@ func (w *WAL) rotate() error {
 	if w.opts.Sync && w.active != nil {
 		w.active.file.Sync()
 	}
-	return w.newSegment()
+	w.maxActive++
+	if err := w.newSegment(); err != nil {
+		return err
+	}
+	w.compact()
+	return nil
+}
+
+func (w *WAL) compact() {
+	maxSegs := w.opts.MaxSegments
+	if maxSegs <= 0 {
+		return
+	}
+	if len(w.segments) <= maxSegs {
+		return
+	}
+	remove := len(w.segments) - maxSegs
+	for i := 0; i < remove; i++ {
+		seg := w.segments[i]
+		seg.file.Close()
+		os.Remove(seg.path)
+	}
+	w.segments = w.segments[remove:]
 }
 
 func (w *WAL) newSegment() error {
