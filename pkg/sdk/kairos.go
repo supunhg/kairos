@@ -28,11 +28,12 @@ func (identityVerifier) Verify(ev *v1.Event) error {
 }
 
 type Client struct {
-	nodeID   string
-	engine   *syncengine.Engine
-	identity *identity.Identity
-	conns    map[string]*quic.Conn
-	mu       sync.RWMutex
+	nodeID       string
+	engine       *syncengine.Engine
+	identity     *identity.Identity
+	syncProto    *syncengine.SyncProtocol
+	conns        map[string]*quic.Conn
+	mu           sync.RWMutex
 }
 
 type Option func(*Client)
@@ -81,7 +82,12 @@ func New(nodeID string, opts ...Option) *Client {
 		)
 	}
 	c.engine = syncengine.NewEngine(nodeID, engineOpts...)
+	c.syncProto = syncengine.NewSyncProtocol(c.engine)
 	return c
+}
+
+func (c *Client) SyncProtocol() *syncengine.SyncProtocol {
+	return c.syncProto
 }
 
 func (c *Client) Join(ctx context.Context, sessionID string) (*Session, error) {
@@ -102,13 +108,23 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 	c.conns[addr] = conn
 	c.mu.Unlock()
 
+	req := c.syncProto.BuildSyncRequest(ctx)
+	data, err := syncengine.MarshalSyncRequest(req)
+	if err != nil {
+		return fmt.Errorf("marshal sync req: %w", err)
+	}
+	if err := conn.Send(ctx, quic.Message{Type: quic.MsgSyncReq, Payload: data}); err != nil {
+		return fmt.Errorf("send sync req: %w", err)
+	}
+
 	go c.receiveLoop(conn)
 	return nil
 }
 
 func (c *Client) receiveLoop(conn *quic.Conn) {
+	ctx := context.Background()
 	for {
-		msg, err := conn.Receive(context.Background())
+		msg, err := conn.Receive(ctx)
 		if err != nil {
 			return
 		}
@@ -118,7 +134,29 @@ func (c *Client) receiveLoop(conn *quic.Conn) {
 			if err := proto.Unmarshal(msg.Payload, &ev); err != nil {
 				continue
 			}
-			c.engine.Apply(context.Background(), []*Event{&ev})
+			c.engine.Apply(ctx, []*Event{&ev})
+
+		case quic.MsgSyncReq:
+			req, err := syncengine.UnmarshalSyncRequest(msg.Payload)
+			if err != nil {
+				continue
+			}
+			resp, err := c.syncProto.HandleSyncRequest(ctx, req)
+			if err != nil {
+				continue
+			}
+			data, err := syncengine.MarshalSyncResponse(resp)
+			if err != nil {
+				continue
+			}
+			conn.Send(ctx, quic.Message{Type: quic.MsgSyncResp, Payload: data})
+
+		case quic.MsgSyncResp:
+			resp, err := syncengine.UnmarshalSyncResponse(msg.Payload)
+			if err != nil {
+				continue
+			}
+			c.syncProto.HandleSyncResponse(ctx, resp)
 		}
 	}
 }
