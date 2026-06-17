@@ -26,8 +26,9 @@ const (
 	MsgSyncResp MessageType = 0x03
 	MsgPing     MessageType = 0x04
 	MsgPong     MessageType = 0x05
-	MsgJoin     MessageType = 0x06
-	MsgLeave    MessageType = 0x07
+	MsgJoin       MessageType = 0x06
+	MsgLeave      MessageType = 0x07
+	MsgKeyExchange MessageType = 0x08
 )
 
 type Message struct {

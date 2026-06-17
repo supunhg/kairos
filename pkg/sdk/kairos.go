@@ -32,6 +32,7 @@ type Client struct {
 	engine       *syncengine.Engine
 	identity     *identity.Identity
 	syncProto    *syncengine.SyncProtocol
+	encryption   *crypto.SessionEncryption
 	conns        map[string]*quic.Conn
 	mu           sync.RWMutex
 }
@@ -41,6 +42,12 @@ type Option func(*Client)
 func WithIdentity(id *identity.Identity) Option {
 	return func(c *Client) {
 		c.identity = id
+	}
+}
+
+func WithEncryption(enc *crypto.SessionEncryption) Option {
+	return func(c *Client) {
+		c.encryption = enc
 	}
 }
 
@@ -108,6 +115,15 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 	c.conns[addr] = conn
 	c.mu.Unlock()
 
+	if c.encryption != nil {
+		if err := conn.Send(ctx, quic.Message{
+			Type:    quic.MsgKeyExchange,
+			Payload: c.encryption.PublicKey(),
+		}); err != nil {
+			return fmt.Errorf("send key exchange: %w", err)
+		}
+	}
+
 	req := c.syncProto.BuildSyncRequest(ctx)
 	data, err := syncengine.MarshalSyncRequest(req)
 	if err != nil {
@@ -117,11 +133,11 @@ func (c *Client) Connect(ctx context.Context, addr string) error {
 		return fmt.Errorf("send sync req: %w", err)
 	}
 
-	go c.receiveLoop(conn)
+	go c.receiveLoop(conn, addr)
 	return nil
 }
 
-func (c *Client) receiveLoop(conn *quic.Conn) {
+func (c *Client) receiveLoop(conn *quic.Conn, peerAddr string) {
 	ctx := context.Background()
 	for {
 		msg, err := conn.Receive(ctx)
@@ -129,6 +145,15 @@ func (c *Client) receiveLoop(conn *quic.Conn) {
 			return
 		}
 		switch msg.Type {
+		case quic.MsgKeyExchange:
+			if c.encryption != nil {
+				c.encryption.EstablishSession(peerAddr, msg.Payload)
+				conn.Send(ctx, quic.Message{
+					Type:    quic.MsgKeyExchange,
+					Payload: c.encryption.PublicKey(),
+				})
+			}
+
 		case quic.MsgEvent:
 			var ev Event
 			if err := proto.Unmarshal(msg.Payload, &ev); err != nil {
