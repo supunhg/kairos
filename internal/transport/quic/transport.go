@@ -7,9 +7,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/binary"
+	"encoding/pem"
 	"io"
 	"math/big"
 	"net"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/quic-go/quic-go"
@@ -174,4 +177,47 @@ func generateTLSConfig() *tls.Config {
 		Certificates: []tls.Certificate{cert},
 		NextProtos:   []string{"kairos"},
 	}
+}
+
+func LoadOrGenerateTLSConfig(path string) (*tls.Config, error) {
+	if path != "" {
+		if data, err := os.ReadFile(path); err == nil {
+			block, _ := pem.Decode(data)
+			if block != nil {
+				if cert, err := tls.X509KeyPair(data, data); err == nil {
+					return &tls.Config{
+						Certificates: []tls.Certificate{cert},
+						NextProtos:   []string{"kairos"},
+					}, nil
+				}
+			}
+		}
+	}
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		return nil, err
+	}
+	cert := tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  key,
+	}
+	if path != "" {
+		dir := filepath.Dir(path)
+		if err := os.MkdirAll(dir, 0700); err == nil {
+			certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+			keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+			os.WriteFile(path, append(certPEM, keyPEM...), 0600)
+		}
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		NextProtos:   []string{"kairos"},
+	}, nil
 }

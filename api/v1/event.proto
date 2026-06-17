@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package kairos.v1;
 
-option go_package = "github.com/kairos-io/kairos-go/api/v1";
+option go_package = "github.com/supunhg/kairos/api/v1";
 
 // Event is the atomic unit of state mutation in KAIROS.
 // Every state change is an Event, appended to the log.

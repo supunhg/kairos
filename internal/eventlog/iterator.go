@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/kairos-io/kairos-go/api/v1"
+	"github.com/supunhg/kairos/api/v1"
 )
 
 type iterator struct {

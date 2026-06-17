@@ -1,4 +1,4 @@
-module github.com/kairos-io/kairos-go
+module github.com/supunhg/kairos
 
 go 1.26.4
 

@@ -5,17 +5,42 @@ import (
 	"fmt"
 	"sync"
 
-	syncengine "github.com/kairos-io/kairos-go/internal/sync"
-	"github.com/kairos-io/kairos-go/internal/transport/quic"
-	"github.com/kairos-io/kairos-go/api/v1"
+	syncengine "github.com/supunhg/kairos/internal/sync"
+	"github.com/supunhg/kairos/internal/identity"
+	"github.com/supunhg/kairos/internal/crypto"
+	"github.com/supunhg/kairos/internal/transport/quic"
+	"github.com/supunhg/kairos/api/v1"
 	"google.golang.org/protobuf/proto"
 )
 
+type identitySigner struct {
+	*identity.Identity
+}
+
+func (s *identitySigner) Sign(ev *v1.Event) error {
+	return crypto.SignEvent(s.Identity, ev)
+}
+
+type identityVerifier struct{}
+
+func (identityVerifier) Verify(ev *v1.Event) error {
+	return crypto.VerifyEvent(ev)
+}
+
 type Client struct {
-	nodeID string
-	engine *syncengine.Engine
-	conns  map[string]*quic.Conn
-	mu     sync.RWMutex
+	nodeID   string
+	engine   *syncengine.Engine
+	identity *identity.Identity
+	conns    map[string]*quic.Conn
+	mu       sync.RWMutex
+}
+
+type Option func(*Client)
+
+func WithIdentity(id *identity.Identity) Option {
+	return func(c *Client) {
+		c.identity = id
+	}
 }
 
 type Session struct {
@@ -40,12 +65,23 @@ type Subscription struct {
 
 type Event = v1.Event
 
-func New(nodeID string) *Client {
-	return &Client{
+func New(nodeID string, opts ...Option) *Client {
+	c := &Client{
 		nodeID: nodeID,
-		engine: syncengine.NewEngine(nodeID),
 		conns:  make(map[string]*quic.Conn),
 	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	var engineOpts []syncengine.EngineOpt
+	if c.identity != nil {
+		engineOpts = append(engineOpts,
+			syncengine.WithSigner(&identitySigner{c.identity}),
+			syncengine.WithVerifier(identityVerifier{}),
+		)
+	}
+	c.engine = syncengine.NewEngine(nodeID, engineOpts...)
+	return c
 }
 
 func (c *Client) Join(ctx context.Context, sessionID string) (*Session, error) {

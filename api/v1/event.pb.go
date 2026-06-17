@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.28.3
-// source: v1/event.proto
+// source: api/v1/event.proto
 
 package v1
 
@@ -50,7 +50,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_v1_event_proto_msgTypes[0]
+	mi := &file_api_v1_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -62,7 +62,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[0]
+	mi := &file_api_v1_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -75,7 +75,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{0}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Event) GetId() string {
@@ -151,7 +151,7 @@ type EventBatch struct {
 
 func (x *EventBatch) Reset() {
 	*x = EventBatch{}
-	mi := &file_v1_event_proto_msgTypes[1]
+	mi := &file_api_v1_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +163,7 @@ func (x *EventBatch) String() string {
 func (*EventBatch) ProtoMessage() {}
 
 func (x *EventBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[1]
+	mi := &file_api_v1_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +176,7 @@ func (x *EventBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventBatch.ProtoReflect.Descriptor instead.
 func (*EventBatch) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{1}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EventBatch) GetEvents() []*Event {
@@ -200,7 +200,7 @@ type SnapshotManifest struct {
 
 func (x *SnapshotManifest) Reset() {
 	*x = SnapshotManifest{}
-	mi := &file_v1_event_proto_msgTypes[2]
+	mi := &file_api_v1_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +212,7 @@ func (x *SnapshotManifest) String() string {
 func (*SnapshotManifest) ProtoMessage() {}
 
 func (x *SnapshotManifest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[2]
+	mi := &file_api_v1_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +225,7 @@ func (x *SnapshotManifest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotManifest.ProtoReflect.Descriptor instead.
 func (*SnapshotManifest) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{2}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SnapshotManifest) GetSnapshotId() string {
@@ -275,7 +275,7 @@ type HLC struct {
 
 func (x *HLC) Reset() {
 	*x = HLC{}
-	mi := &file_v1_event_proto_msgTypes[3]
+	mi := &file_api_v1_event_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -287,7 +287,7 @@ func (x *HLC) String() string {
 func (*HLC) ProtoMessage() {}
 
 func (x *HLC) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[3]
+	mi := &file_api_v1_event_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,7 +300,7 @@ func (x *HLC) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HLC.ProtoReflect.Descriptor instead.
 func (*HLC) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{3}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HLC) GetWallTime() int64 {
@@ -338,7 +338,7 @@ type TextInsert struct {
 
 func (x *TextInsert) Reset() {
 	*x = TextInsert{}
-	mi := &file_v1_event_proto_msgTypes[4]
+	mi := &file_api_v1_event_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +350,7 @@ func (x *TextInsert) String() string {
 func (*TextInsert) ProtoMessage() {}
 
 func (x *TextInsert) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[4]
+	mi := &file_api_v1_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +363,7 @@ func (x *TextInsert) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextInsert.ProtoReflect.Descriptor instead.
 func (*TextInsert) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{4}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TextInsert) GetDocId() string {
@@ -405,7 +405,7 @@ type TextDelete struct {
 
 func (x *TextDelete) Reset() {
 	*x = TextDelete{}
-	mi := &file_v1_event_proto_msgTypes[5]
+	mi := &file_api_v1_event_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +417,7 @@ func (x *TextDelete) String() string {
 func (*TextDelete) ProtoMessage() {}
 
 func (x *TextDelete) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[5]
+	mi := &file_api_v1_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +430,7 @@ func (x *TextDelete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextDelete.ProtoReflect.Descriptor instead.
 func (*TextDelete) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{5}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TextDelete) GetDocId() string {
@@ -465,7 +465,7 @@ type MapSet struct {
 
 func (x *MapSet) Reset() {
 	*x = MapSet{}
-	mi := &file_v1_event_proto_msgTypes[6]
+	mi := &file_api_v1_event_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -477,7 +477,7 @@ func (x *MapSet) String() string {
 func (*MapSet) ProtoMessage() {}
 
 func (x *MapSet) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[6]
+	mi := &file_api_v1_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -490,7 +490,7 @@ func (x *MapSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapSet.ProtoReflect.Descriptor instead.
 func (*MapSet) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{6}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MapSet) GetMapId() string {
@@ -524,7 +524,7 @@ type MapDelete struct {
 
 func (x *MapDelete) Reset() {
 	*x = MapDelete{}
-	mi := &file_v1_event_proto_msgTypes[7]
+	mi := &file_api_v1_event_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +536,7 @@ func (x *MapDelete) String() string {
 func (*MapDelete) ProtoMessage() {}
 
 func (x *MapDelete) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[7]
+	mi := &file_api_v1_event_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +549,7 @@ func (x *MapDelete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapDelete.ProtoReflect.Descriptor instead.
 func (*MapDelete) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{7}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MapDelete) GetMapId() string {
@@ -576,7 +576,7 @@ type CounterIncrement struct {
 
 func (x *CounterIncrement) Reset() {
 	*x = CounterIncrement{}
-	mi := &file_v1_event_proto_msgTypes[8]
+	mi := &file_api_v1_event_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +588,7 @@ func (x *CounterIncrement) String() string {
 func (*CounterIncrement) ProtoMessage() {}
 
 func (x *CounterIncrement) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[8]
+	mi := &file_api_v1_event_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,7 +601,7 @@ func (x *CounterIncrement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CounterIncrement.ProtoReflect.Descriptor instead.
 func (*CounterIncrement) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{8}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CounterIncrement) GetCounterId() string {
@@ -628,7 +628,7 @@ type RegisterSet struct {
 
 func (x *RegisterSet) Reset() {
 	*x = RegisterSet{}
-	mi := &file_v1_event_proto_msgTypes[9]
+	mi := &file_api_v1_event_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -640,7 +640,7 @@ func (x *RegisterSet) String() string {
 func (*RegisterSet) ProtoMessage() {}
 
 func (x *RegisterSet) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[9]
+	mi := &file_api_v1_event_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -653,7 +653,7 @@ func (x *RegisterSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterSet.ProtoReflect.Descriptor instead.
 func (*RegisterSet) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{9}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RegisterSet) GetRegisterId() string {
@@ -685,7 +685,7 @@ type SyncRequest struct {
 
 func (x *SyncRequest) Reset() {
 	*x = SyncRequest{}
-	mi := &file_v1_event_proto_msgTypes[10]
+	mi := &file_api_v1_event_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -697,7 +697,7 @@ func (x *SyncRequest) String() string {
 func (*SyncRequest) ProtoMessage() {}
 
 func (x *SyncRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[10]
+	mi := &file_api_v1_event_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,7 +710,7 @@ func (x *SyncRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncRequest.ProtoReflect.Descriptor instead.
 func (*SyncRequest) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{10}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SyncRequest) GetGroupId() string {
@@ -754,7 +754,7 @@ type SyncResponse struct {
 
 func (x *SyncResponse) Reset() {
 	*x = SyncResponse{}
-	mi := &file_v1_event_proto_msgTypes[11]
+	mi := &file_api_v1_event_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +766,7 @@ func (x *SyncResponse) String() string {
 func (*SyncResponse) ProtoMessage() {}
 
 func (x *SyncResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[11]
+	mi := &file_api_v1_event_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +779,7 @@ func (x *SyncResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncResponse.ProtoReflect.Descriptor instead.
 func (*SyncResponse) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{11}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SyncResponse) GetGroupId() string {
@@ -828,7 +828,7 @@ type PresenceUpdate struct {
 
 func (x *PresenceUpdate) Reset() {
 	*x = PresenceUpdate{}
-	mi := &file_v1_event_proto_msgTypes[12]
+	mi := &file_api_v1_event_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -840,7 +840,7 @@ func (x *PresenceUpdate) String() string {
 func (*PresenceUpdate) ProtoMessage() {}
 
 func (x *PresenceUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[12]
+	mi := &file_api_v1_event_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -853,7 +853,7 @@ func (x *PresenceUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PresenceUpdate.ProtoReflect.Descriptor instead.
 func (*PresenceUpdate) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{12}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *PresenceUpdate) GetUserId() string {
@@ -908,7 +908,7 @@ type Cursor struct {
 
 func (x *Cursor) Reset() {
 	*x = Cursor{}
-	mi := &file_v1_event_proto_msgTypes[13]
+	mi := &file_api_v1_event_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -920,7 +920,7 @@ func (x *Cursor) String() string {
 func (*Cursor) ProtoMessage() {}
 
 func (x *Cursor) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[13]
+	mi := &file_api_v1_event_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -933,7 +933,7 @@ func (x *Cursor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cursor.ProtoReflect.Descriptor instead.
 func (*Cursor) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{13}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Cursor) GetPosition() int64 {
@@ -962,7 +962,7 @@ type Selection struct {
 
 func (x *Selection) Reset() {
 	*x = Selection{}
-	mi := &file_v1_event_proto_msgTypes[14]
+	mi := &file_api_v1_event_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -974,7 +974,7 @@ func (x *Selection) String() string {
 func (*Selection) ProtoMessage() {}
 
 func (x *Selection) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_event_proto_msgTypes[14]
+	mi := &file_api_v1_event_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -987,7 +987,7 @@ func (x *Selection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Selection.ProtoReflect.Descriptor instead.
 func (*Selection) Descriptor() ([]byte, []int) {
-	return file_v1_event_proto_rawDescGZIP(), []int{14}
+	return file_api_v1_event_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Selection) GetStart() int64 {
@@ -1018,11 +1018,11 @@ func (x *Selection) GetEndAnchor() string {
 	return ""
 }
 
-var File_v1_event_proto protoreflect.FileDescriptor
+var File_api_v1_event_proto protoreflect.FileDescriptor
 
-const file_v1_event_proto_rawDesc = "" +
+const file_api_v1_event_proto_rawDesc = "" +
 	"\n" +
-	"\x0ev1/event.proto\x12\tkairos.v1\"\x92\x02\n" +
+	"\x12api/v1/event.proto\x12\tkairos.v1\"\x92\x02\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vcausal_deps\x18\x02 \x03(\tR\n" +
@@ -1116,22 +1116,22 @@ const file_v1_event_proto_rawDesc = "" +
 	"\x03end\x18\x02 \x01(\x03R\x03end\x12!\n" +
 	"\fstart_anchor\x18\x03 \x01(\tR\vstartAnchor\x12\x1d\n" +
 	"\n" +
-	"end_anchor\x18\x04 \x01(\tR\tendAnchorB*Z(github.com/kairos-io/kairos-go/api/v1;v1b\x06proto3"
+	"end_anchor\x18\x04 \x01(\tR\tendAnchorB\"Z github.com/supunhg/kairos/api/v1b\x06proto3"
 
 var (
-	file_v1_event_proto_rawDescOnce sync.Once
-	file_v1_event_proto_rawDescData []byte
+	file_api_v1_event_proto_rawDescOnce sync.Once
+	file_api_v1_event_proto_rawDescData []byte
 )
 
-func file_v1_event_proto_rawDescGZIP() []byte {
-	file_v1_event_proto_rawDescOnce.Do(func() {
-		file_v1_event_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v1_event_proto_rawDesc), len(file_v1_event_proto_rawDesc)))
+func file_api_v1_event_proto_rawDescGZIP() []byte {
+	file_api_v1_event_proto_rawDescOnce.Do(func() {
+		file_api_v1_event_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_v1_event_proto_rawDesc), len(file_api_v1_event_proto_rawDesc)))
 	})
-	return file_v1_event_proto_rawDescData
+	return file_api_v1_event_proto_rawDescData
 }
 
-var file_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_v1_event_proto_goTypes = []any{
+var file_api_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_api_v1_event_proto_goTypes = []any{
 	(*Event)(nil),            // 0: kairos.v1.Event
 	(*EventBatch)(nil),       // 1: kairos.v1.EventBatch
 	(*SnapshotManifest)(nil), // 2: kairos.v1.SnapshotManifest
@@ -1152,7 +1152,7 @@ var file_v1_event_proto_goTypes = []any{
 	nil,                      // 17: kairos.v1.SyncResponse.VersionVectorEntry
 	nil,                      // 18: kairos.v1.PresenceUpdate.MetadataEntry
 }
-var file_v1_event_proto_depIdxs = []int32{
+var file_api_v1_event_proto_depIdxs = []int32{
 	0,  // 0: kairos.v1.EventBatch.events:type_name -> kairos.v1.Event
 	15, // 1: kairos.v1.SnapshotManifest.metadata:type_name -> kairos.v1.SnapshotManifest.MetadataEntry
 	16, // 2: kairos.v1.SyncRequest.known_versions:type_name -> kairos.v1.SyncRequest.KnownVersionsEntry
@@ -1168,26 +1168,26 @@ var file_v1_event_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_v1_event_proto_init() }
-func file_v1_event_proto_init() {
-	if File_v1_event_proto != nil {
+func init() { file_api_v1_event_proto_init() }
+func file_api_v1_event_proto_init() {
+	if File_api_v1_event_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_event_proto_rawDesc), len(file_v1_event_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_event_proto_rawDesc), len(file_api_v1_event_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_v1_event_proto_goTypes,
-		DependencyIndexes: file_v1_event_proto_depIdxs,
-		MessageInfos:      file_v1_event_proto_msgTypes,
+		GoTypes:           file_api_v1_event_proto_goTypes,
+		DependencyIndexes: file_api_v1_event_proto_depIdxs,
+		MessageInfos:      file_api_v1_event_proto_msgTypes,
 	}.Build()
-	File_v1_event_proto = out.File
-	file_v1_event_proto_goTypes = nil
-	file_v1_event_proto_depIdxs = nil
+	File_api_v1_event_proto = out.File
+	file_api_v1_event_proto_goTypes = nil
+	file_api_v1_event_proto_depIdxs = nil
 }

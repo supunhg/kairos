@@ -7,10 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kairos-io/kairos-go/api/v1"
-	"github.com/kairos-io/kairos-go/internal/crdt"
+	"github.com/supunhg/kairos/api/v1"
+	"github.com/supunhg/kairos/internal/crdt"
 	"google.golang.org/protobuf/proto"
 )
+
+type Signer interface {
+	Sign(event *v1.Event) error
+}
+
+type Verifier interface {
+	Verify(event *v1.Event) error
+}
 
 type GroupType int
 
@@ -36,16 +44,38 @@ type Group struct {
 type Subscriber func(event *v1.Event)
 
 type Engine struct {
-	mu     sync.RWMutex
-	groups map[string]*Group
-	nodeID string
+	mu         sync.RWMutex
+	groups     map[string]*Group
+	nodeID     string
+	signer     Signer
+	verifier   Verifier
+	verifyOnApply bool
 }
 
-func NewEngine(nodeID string) *Engine {
-	return &Engine{
+type EngineOpt func(*Engine)
+
+func WithSigner(s Signer) EngineOpt {
+	return func(e *Engine) {
+		e.signer = s
+	}
+}
+
+func WithVerifier(v Verifier) EngineOpt {
+	return func(e *Engine) {
+		e.verifier = v
+		e.verifyOnApply = true
+	}
+}
+
+func NewEngine(nodeID string, opts ...EngineOpt) *Engine {
+	e := &Engine{
 		groups: make(map[string]*Group),
 		nodeID: nodeID,
 	}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 func (e *Engine) GetOrCreateGroup(id string, gt GroupType) *Group {
@@ -75,6 +105,11 @@ func (e *Engine) GetOrCreateGroup(id string, gt GroupType) *Group {
 
 func (e *Engine) Apply(ctx context.Context, events []*v1.Event) error {
 	for _, ev := range events {
+		if e.verifyOnApply {
+			if err := e.verifier.Verify(ev); err != nil {
+				return err
+			}
+		}
 		if err := e.applyEvent(ev); err != nil {
 			return err
 		}
@@ -174,6 +209,7 @@ func (e *Engine) TextInsert(ctx context.Context, groupID string, pos int, text s
 		Originator:   e.nodeID,
 		GroupId:      groupID,
 	}
+	e.maybeSign(ev)
 
 	group.Doc.Insert(pos, text, e.nodeID)
 	group.version[e.nodeID] = ev.HlcTimestamp
@@ -206,6 +242,7 @@ func (e *Engine) TextDelete(ctx context.Context, groupID string, pos, length int
 		Originator:   e.nodeID,
 		GroupId:      groupID,
 	}
+	e.maybeSign(ev)
 
 	group.Doc.Delete(pos, length)
 	group.version[e.nodeID] = ev.HlcTimestamp
@@ -238,6 +275,7 @@ func (e *Engine) MapSet(ctx context.Context, groupID, key, value string) (*v1.Ev
 		Originator:   e.nodeID,
 		GroupId:      groupID,
 	}
+	e.maybeSign(ev)
 
 	group.Map.Set(key, value, e.nodeID)
 	group.version[e.nodeID] = ev.HlcTimestamp
@@ -299,6 +337,12 @@ func (e *Engine) GroupIDs() []string {
 		ids = append(ids, id)
 	}
 	return ids
+}
+
+func (e *Engine) maybeSign(ev *v1.Event) {
+	if e.signer != nil {
+		e.signer.Sign(ev)
+	}
 }
 
 var (

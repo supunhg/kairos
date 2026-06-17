@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kairos-io/kairos-go/api/v1"
-	"github.com/kairos-io/kairos-go/internal/eventlog"
-	"github.com/kairos-io/kairos-go/internal/wal"
+	"github.com/supunhg/kairos/api/v1"
+	"github.com/supunhg/kairos/internal/eventlog"
+	"github.com/supunhg/kairos/internal/wal"
 	"google.golang.org/protobuf/proto"
 )
 

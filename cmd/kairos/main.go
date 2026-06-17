@@ -8,13 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	kairos "github.com/kairos-io/kairos-go/pkg/sdk"
+	"github.com/supunhg/kairos/internal/identity"
+	kairos "github.com/supunhg/kairos/pkg/sdk"
 )
 
 func main() {
 	nodeID := flag.String("node", "default", "Node ID")
 	addr := flag.String("addr", ":8443", "Listen address")
 	peer := flag.String("peer", "", "Peer address to connect to")
+	identityPath := flag.String("identity", identity.DefaultIdentityPath(), "Ed25519 identity key file")
 	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -23,7 +25,21 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	client := kairos.New(*nodeID)
+	ident, err := identity.LoadIdentityFile(*identityPath)
+	if err != nil {
+		ident, err = identity.Generate()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "generate identity: %v\n", err)
+			os.Exit(1)
+		}
+		if err := identity.SaveIdentityFile(*identityPath, ident); err != nil {
+			fmt.Fprintf(os.Stderr, "save identity: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stderr, "Generated new identity: %s\n", ident.ID())
+	}
+
+	client := kairos.New(*nodeID, kairos.WithIdentity(ident))
 
 	if *peer != "" {
 		if err := client.Connect(ctx, *peer); err != nil {

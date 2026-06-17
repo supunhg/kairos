@@ -40,7 +40,7 @@ go build -o kairos ./cmd/kairos
 ## SDK Usage
 
 ```go
-import kairos "github.com/kairos-io/kairos-go/pkg/sdk"
+import kairos "github.com/supunhg/kairos/pkg/sdk"
 
 client := kairos.New("my-node")
 client.Connect(ctx, "192.168.1.10:8443")
